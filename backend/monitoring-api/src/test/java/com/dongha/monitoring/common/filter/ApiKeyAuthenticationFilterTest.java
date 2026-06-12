@@ -29,9 +29,10 @@ class ApiKeyAuthenticationFilterTest {
   }
 
   @Test
-  void X_API_Key_헤더가_없으면_401을_반환하고_체인을_호출하지_않는다() throws Exception {
+  void events_경로에서_X_API_Key_헤더가_없으면_401을_반환하고_체인을_호출하지_않는다() throws Exception {
     // given
     MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/events");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
     // when
@@ -44,9 +45,10 @@ class ApiKeyAuthenticationFilterTest {
   }
 
   @Test
-  void 유효하지_않은_API_키면_401을_반환하고_체인을_호출하지_않는다() throws Exception {
+  void events_경로에서_유효하지_않은_API_키면_401을_반환하고_체인을_호출하지_않는다() throws Exception {
     // given
     MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/events");
     request.addHeader("X-API-Key", "invalid-key");
     MockHttpServletResponse response = new MockHttpServletResponse();
     when(apiKeyService.validateKey("invalid-key")).thenReturn(false);
@@ -60,9 +62,10 @@ class ApiKeyAuthenticationFilterTest {
   }
 
   @Test
-  void 유효한_API_키면_다음_필터로_통과한다() throws Exception {
+  void events_경로에서_유효한_API_키면_다음_필터로_통과한다() throws Exception {
     // given
     MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/events");
     request.addHeader("X-API-Key", "valid-key");
     MockHttpServletResponse response = new MockHttpServletResponse();
     when(apiKeyService.validateKey("valid-key")).thenReturn(true);
@@ -75,9 +78,10 @@ class ApiKeyAuthenticationFilterTest {
   }
 
   @Test
-  void 빈_문자열_API_키면_401을_반환한다() throws Exception {
+  void events_경로에서_빈_문자열_API_키면_401을_반환한다() throws Exception {
     // given
     MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/events");
     request.addHeader("X-API-Key", "   ");
     MockHttpServletResponse response = new MockHttpServletResponse();
 
@@ -87,5 +91,35 @@ class ApiKeyAuthenticationFilterTest {
     // then
     assertThat(response.getStatus()).isEqualTo(401);
     verify(filterChain, never()).doFilter(any(), any());
+  }
+
+  @Test
+  void 관리_경로는_API_키_없이도_필터를_건너뛴다() throws Exception {
+    // given
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/projects");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    // when
+    filter.doFilter(request, response, filterChain);
+
+    // then
+    verify(filterChain).doFilter(any(), any());
+    assertThat(response.getStatus()).isNotEqualTo(401);
+  }
+
+  @Test
+  void api_keys_경로는_API_키_없이도_필터를_건너뛴다() throws Exception {
+    // given
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/v1/api-keys/1");
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    // when
+    filter.doFilter(request, response, filterChain);
+
+    // then
+    verify(filterChain).doFilter(any(), any());
+    assertThat(response.getStatus()).isNotEqualTo(401);
   }
 }

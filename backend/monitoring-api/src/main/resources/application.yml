@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: ${DATASOURCE_URL:jdbc:postgresql://localhost:5432/monitoring}
+    username: ${DATASOURCE_USERNAME:monitoring}
+    password: ${DATASOURCE_PASSWORD:monitoring}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
