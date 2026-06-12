@@ -12,8 +12,4 @@ public record ErrorResponse(
     return new ErrorResponse(
         errorCode.getCode(), errorCode.getMessage(), OffsetDateTime.now(), List.of());
   }
-
-  public static ErrorResponse of(String code, String message, List<FieldError> errors) {
-    return new ErrorResponse(code, message, OffsetDateTime.now(), errors);
-  }
 }
