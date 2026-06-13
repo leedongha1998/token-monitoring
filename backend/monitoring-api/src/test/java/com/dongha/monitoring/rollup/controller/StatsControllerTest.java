@@ -72,7 +72,7 @@ class StatsControllerTest {
     // given
     SummaryStatsResponse response =
         new SummaryStatsResponse(10000L, 5000L, new BigDecimal("0.10500000"));
-    when(statsService.getSummary(any(), any())).thenReturn(response);
+    when(statsService.getSummary(isNull(), any(), any())).thenReturn(response);
 
     // when & then
     mockMvc
@@ -80,5 +80,24 @@ class StatsControllerTest {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.totalInputTokens").value(10000))
         .andExpect(jsonPath("$.totalOutputTokens").value(5000));
+  }
+
+  @Test
+  void projectId로_요약_통계_조회시_필터링된_합계를_반환한다() throws Exception {
+    // given
+    SummaryStatsResponse response =
+        new SummaryStatsResponse(3000L, 1500L, new BigDecimal("0.03150000"));
+    when(statsService.getSummary(eq(1L), any(), any())).thenReturn(response);
+
+    // when & then
+    mockMvc
+        .perform(
+            get("/v1/stats/summary")
+                .param("projectId", "1")
+                .param("from", "2026-06-01")
+                .param("to", "2026-06-30"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalInputTokens").value(3000))
+        .andExpect(jsonPath("$.totalOutputTokens").value(1500));
   }
 }
