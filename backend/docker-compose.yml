@@ -1,4 +1,4 @@
-services:
+﻿services:
   postgres:
     image: postgres:16
     ports:
@@ -9,6 +9,25 @@ services:
       POSTGRES_PASSWORD: monitoring
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monitoring"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  monitoring-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATASOURCE_URL: jdbc:postgresql://postgres:5432/monitoring
+      DATASOURCE_USERNAME: monitoring
+      DATASOURCE_PASSWORD: monitoring
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
