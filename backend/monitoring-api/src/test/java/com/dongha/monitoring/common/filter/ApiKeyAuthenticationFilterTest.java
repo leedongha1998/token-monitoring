@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.dongha.monitoring.project.service.ApiKeyService;
 import jakarta.servlet.FilterChain;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,7 +52,7 @@ class ApiKeyAuthenticationFilterTest {
     request.setRequestURI("/v1/events");
     request.addHeader("X-API-Key", "invalid-key");
     MockHttpServletResponse response = new MockHttpServletResponse();
-    when(apiKeyService.validateKey("invalid-key")).thenReturn(false);
+    when(apiKeyService.findProjectIdByKey("invalid-key")).thenReturn(Optional.empty());
 
     // when
     filter.doFilter(request, response, filterChain);
@@ -68,7 +69,7 @@ class ApiKeyAuthenticationFilterTest {
     request.setRequestURI("/v1/events");
     request.addHeader("X-API-Key", "valid-key");
     MockHttpServletResponse response = new MockHttpServletResponse();
-    when(apiKeyService.validateKey("valid-key")).thenReturn(true);
+    when(apiKeyService.findProjectIdByKey("valid-key")).thenReturn(Optional.of(1L));
 
     // when
     filter.doFilter(request, response, filterChain);

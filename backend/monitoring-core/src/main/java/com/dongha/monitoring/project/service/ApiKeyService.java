@@ -6,6 +6,7 @@ import com.dongha.monitoring.project.domain.ApiKey;
 import com.dongha.monitoring.project.domain.Project;
 import com.dongha.monitoring.project.repository.ApiKeyRepository;
 import com.dongha.monitoring.project.repository.ProjectRepository;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,13 @@ public class ApiKeyService {
 
   public boolean validateKey(String rawKey) {
     return apiKeyRepository.findByKeyHashAndActiveTrue(ApiKey.hashKey(rawKey)).isPresent();
+  }
+
+  public Optional<Long> findProjectIdByKey(String rawKey) {
+    if (rawKey == null || rawKey.isBlank()) return Optional.empty();
+    return apiKeyRepository
+        .findByKeyHashAndActiveTrue(ApiKey.hashKey(rawKey))
+        .map(key -> key.getProject().getId());
   }
 
   @Transactional

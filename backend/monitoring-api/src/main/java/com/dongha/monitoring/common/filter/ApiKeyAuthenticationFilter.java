@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -35,10 +36,16 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
     String rawKey = request.getHeader(API_KEY_HEADER);
-    if (rawKey == null || rawKey.isBlank() || !apiKeyService.validateKey(rawKey)) {
+    if (rawKey == null || rawKey.isBlank()) {
       writeUnauthorized(response);
       return;
     }
+    Optional<Long> projectId = apiKeyService.findProjectIdByKey(rawKey);
+    if (projectId.isEmpty()) {
+      writeUnauthorized(response);
+      return;
+    }
+    request.setAttribute("authenticatedProjectId", projectId.get());
     chain.doFilter(request, response);
   }
 
