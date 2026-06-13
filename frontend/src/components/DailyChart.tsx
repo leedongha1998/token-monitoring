@@ -6,6 +6,7 @@ interface Props {
   from: string;
   to: string;
   model?: string;
+  projectId?: number;
 }
 
 const CHART_WIDTH = 880;
@@ -15,7 +16,7 @@ const PAD_RIGHT = 16;
 const PAD_TOP = 16;
 const PAD_BOTTOM = 40;
 
-export function DailyChart({ from, to, model }: Props) {
+export function DailyChart({ from, to, model, projectId }: Props) {
   const [rows, setRows] = useState<DailyStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,13 +24,13 @@ export function DailyChart({ from, to, model }: Props) {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    fetchDailyStats({ from, to, model })
+    fetchDailyStats({ from, to, model, projectId })
       .then(setRows)
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "알 수 없는 오류"),
       )
       .finally(() => setLoading(false));
-  }, [from, to, model]);
+  }, [from, to, model, projectId]);
 
   if (loading) return <p>차트 로딩 중...</p>;
   if (error) return <p style={{ color: "red" }}>오류: {error}</p>;
@@ -38,7 +39,6 @@ export function DailyChart({ from, to, model }: Props) {
       <p style={{ color: "#999", marginBottom: 24 }}>차트 데이터 없음</p>
     );
 
-  // 날짜별로 totalCost 합산
   const costByDate = new Map<string, number>();
   for (const row of rows) {
     const prev = costByDate.get(row.date) ?? 0;

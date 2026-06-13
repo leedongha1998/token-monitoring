@@ -20,22 +20,25 @@ public class StatsService {
 
   public List<DailyStatsResponse> getDailyStats(
       Long projectId, LocalDate from, LocalDate to, String model) {
-    List<DailyRollup> rollups =
-        projectId != null
-            ? dailyRollupRepository.findByProjectIdAndDateBetween(projectId, from, to)
-            : dailyRollupRepository.findByDateBetween(from, to);
+    List<DailyRollup> rollups = fetchRollups(projectId, from, to);
     if (model != null) {
       rollups = rollups.stream().filter(r -> model.equals(r.getModel())).toList();
     }
     return rollups.stream().map(DailyStatsResponse::from).toList();
   }
 
-  public SummaryStatsResponse getSummary(LocalDate from, LocalDate to) {
-    List<DailyRollup> rollups = dailyRollupRepository.findByDateBetween(from, to);
+  public SummaryStatsResponse getSummary(Long projectId, LocalDate from, LocalDate to) {
+    List<DailyRollup> rollups = fetchRollups(projectId, from, to);
     long totalInputTokens = rollups.stream().mapToLong(DailyRollup::getTotalInputTokens).sum();
     long totalOutputTokens = rollups.stream().mapToLong(DailyRollup::getTotalOutputTokens).sum();
     BigDecimal totalCost =
         rollups.stream().map(DailyRollup::getTotalCost).reduce(BigDecimal.ZERO, BigDecimal::add);
     return new SummaryStatsResponse(totalInputTokens, totalOutputTokens, totalCost);
+  }
+
+  private List<DailyRollup> fetchRollups(Long projectId, LocalDate from, LocalDate to) {
+    return projectId != null
+        ? dailyRollupRepository.findByProjectIdAndDateBetween(projectId, from, to)
+        : dailyRollupRepository.findByDateBetween(from, to);
   }
 }

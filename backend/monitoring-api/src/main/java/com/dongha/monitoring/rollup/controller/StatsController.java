@@ -33,8 +33,9 @@ public class StatsController {
 
   @GetMapping("/summary")
   public ResponseEntity<SummaryStatsResponse> summary(
+      @RequestParam(required = false) Long projectId,
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-    return ResponseEntity.ok(statsService.getSummary(from, to));
+    return ResponseEntity.ok(statsService.getSummary(projectId, from, to));
   }
 }

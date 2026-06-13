@@ -1,0 +1,54 @@
+{
+  "version": "1.0",
+  "task": "API 기능 보완: Stats summary projectId 필터, ModelPricing 관리 API, Rollup 재실행 API, 프론트엔드 프로젝트 필터",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "GET /v1/stats/summary에 projectId 필터 추가",
+      "passes": true,
+      "acceptanceCriteria": [
+        "StatsService.getSummary(Long projectId, LocalDate from, LocalDate to)로 시그니처 변경",
+        "projectId != null이면 findByProjectIdAndDateBetween, null이면 findByDateBetween으로 조회",
+        "StatsController GET /v1/stats/summary?projectId= 파라미터 수락 (optional)",
+        "StatsControllerTest에 projectId 있는 경우/없는 경우 테스트 추가",
+        "./gradlew build BUILD SUCCESSFUL"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "ModelPricing 관리 API (POST /v1/pricing, GET /v1/pricing)",
+      "passes": true,
+      "acceptanceCriteria": [
+        "monitoring-core에 ModelPricingService 존재: register, findByModel 메서드 (ModelPricingResult 반환)",
+        "ModelPricingRepository에 findByModelOrderByEffectiveFromDesc(String model) 추가",
+        "monitoring-api에 ModelPricingController 존재: POST /v1/pricing → 201 + Location, GET /v1/pricing?model= → 200 목록",
+        "request DTO: ModelPricingRequest record, response DTO: ModelPricingResponse record",
+        "ModelPricingControllerTest: POST 201, GET 200 목록 테스트 존재",
+        "ModelPricingServiceTest: register 저장, findByModel 반환, 검증 실패 테스트 존재",
+        "./gradlew build BUILD SUCCESSFUL"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Rollup 재실행 API (POST /v1/rollup/trigger)",
+      "passes": true,
+      "acceptanceCriteria": [
+        "monitoring-api에 RollupController 존재: POST /v1/rollup/trigger?date=YYYY-MM-DD → 202 Accepted",
+        "date 파라미터 누락 시 400 반환",
+        "DailyRollupService.rollup(LocalDate) 호출 검증",
+        "RollupControllerTest: 202 정상, 400 date누락 테스트 존재",
+        "./gradlew build BUILD SUCCESSFUL"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "프론트엔드 프로젝트 ID 필터 추가",
+      "passes": true,
+      "acceptanceCriteria": [
+        "App.tsx에 projectId 상태(string)와 number input 필드 추가",
+        "DailyChart와 DailyStatsTable에 projectId prop 전달 (비어있으면 undefined)",
+        "npm run build TypeScript 오류 없이 통과"
+      ]
+    }
+  ]
+}

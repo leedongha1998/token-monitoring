@@ -1,0 +1,129 @@
+Ralph session: 하네스 골격 구축
+Started: 2026-06-11
+
+## Iteration 1
+
+### Task
+Gradle 멀티모듈 골격 + ArchUnit/Spotless 빌드 게이트 구성. 도메인 코드 없음.
+
+### Status
+- US-001 through US-005: COMPLETE (passes: true)
+
+### Key decisions
+- Spring Boot BOM: platform() 방식 사용 (io.spring.dependency-management 플러그인 불필요)
+- springBootVersion = "3.3.5"
+- tasks.withType<Test> { useJUnitPlatform() } 루트에서 서브프로젝트 전체 적용
+- 메인 클래스: @SpringBootApplication 없이 순수 Java 빈 클래스 (Spring 컨텍스트 기동 불필요)
+- Hook 검증: 새 세션에서만 가능 (session-start 시 로드)
+
+---
+
+Ralph session: Project·ApiKey 도메인 + Flyway V1 + X-API-Key 필터
+Started: 2026-06-12
+Commit: ba866d9 (feature/project-foundation)
+
+## Iteration 1
+
+### Task
+Project·ApiKey 엔티티, Flyway V1 마이그레이션, X-API-Key 인증 필터 구현.
+
+### Status
+- US-006 through US-010: COMPLETE (passes: true)
+- ./gradlew spotlessCheck build → BUILD SUCCESSFUL (21 tasks, 21 tests, 0 failures)
+
+### Files created
+- monitoring-core: Project, ApiKey (domain), ProjectRepository, ApiKeyRepository, ApiKeyService
+- monitoring-api: ApiKeyAuthenticationFilter, V1__create_project_and_api_key.sql
+- Tests: ProjectTest(2), ApiKeyTest(6), ApiKeyServiceTest(2), ApiKeyAuthenticationFilterTest(4)
+
+### Key decisions
+- Lombok 미사용: 의존성 추가 없이 수동 getter/constructor (build.gradle 변경 최소화)
+- ApiKey.hashKey(): HexFormat.of().formatHex() — Java 21 내장, StringBuilder 루프 대체
+- SHA-256 NoSuchAlgorithmException → IllegalStateException 래핑 (항상 사용 가능한 알고리즘)
+- ApiKeyServiceTest는 monitoring-core에 배치: JPA 타입이 monitoring-core compile 클래스패스에만 있기 때문
+  (monitoring-api에서 JpaRepository 모킹 시 compileTestJava 실패 — Gradle implementation scope 비전파)
+- 테스트 의존성: archunit-junit5의 junit-jupiter는 provided scope → spring-boot-starter-test로 JUnit 5 명시 추가
+- @SpringBootApplication 미추가: 빌드 통과에 불필요, 추후 런타임 설정 시 추가 예정
+
+### Out-of-scope findings
+- ApiKeyAuthenticationFilter @Component → @SpringBootApplication 추가 시 모든 경로에 적용됨
+  관리 API(프로젝트 등록 등)는 별도 인증 체계이므로, 필터에 shouldNotFilter() 경로 제외 필요 (다음 작업 시 처리)
+
+---
+
+Ralph session: 빌드 검증 + 프론트엔드 기능 보완 + PR 생성
+Started: 2026-06-14
+Commits: d1bb35c (feature/scheduler-dashboard)
+PR: feat: LLM 토큰 모니터링 서비스 전체 구현 → main (머지 완료)
+
+## Iteration 1
+
+### Task
+1. ./gradlew spotlessCheck build 최종 검증
+2. 프론트엔드 모델 필터 + 일별 비용 SVG 차트 추가
+3. PR 생성 및 머지
+
+### Status
+- US-B01 (빌드 검증): COMPLETE — BUILD SUCCESSFUL, 20 tasks UP-TO-DATE, 0 failures
+- US-F01 (모델 필터): COMPLETE — App.tsx에 model 상태 + text input, DailyStatsTable/DailyChart에 전달
+- US-F02 (차트): COMPLETE — DailyChart.tsx SVG 막대 차트, 외부 라이브러리 없음
+- US-B02 (PR): COMPLETE — PR 생성 + 머지 (사용자 직접 수행, gh CLI 미설치)
+
+### Files changed
+- frontend/src/App.tsx: model state + text input 필터 추가, DailyChart 임포트
+- frontend/src/components/DailyChart.tsx: 신규 — SVG 막대 차트 (날짜별 totalCost 집계)
+
+### Key decisions
+- SVG 차트를 외부 라이브러리 없이 순수 SVG로 구현: recharts 등 npm 의존성 추가 없음
+- maxCost guard: Math.max(...costs, 0.0001) — 데이터 없을 때 0 나누기 방지
+- 날짜 라벨: 14개 초과 시 ceil(n/14) 간격으로 선택 표시 (가독성)
+- model 필터: 빈 문자열 → undefined 변환 (model || undefined)으로 API 파라미터 생략
+
+### Out-of-scope findings
+- gh CLI 미설치: PR 자동 생성 불가, 사용자가 GitHub 웹 UI에서 직접 생성
+- ApiKeyAuthenticationFilter shouldNotFilter() 미구현: 관리 API도 X-API-Key 인증 적용 중 (내부망 전제)
+
+---
+
+Ralph session: API 기능 보완 (Stats/Pricing/Rollup/프론트엔드)
+Started: 2026-06-14
+Branch: feature/api-enhancements
+
+## Iteration 1
+
+### Task
+1. GET /v1/stats/summary에 projectId 필터 추가
+2. ModelPricing 관리 API (POST /v1/pricing, GET /v1/pricing?model=)
+3. Rollup 재실행 API (POST /v1/rollup/trigger?date=)
+4. 프론트엔드 프로젝트 ID 필터 추가
+
+### Status
+- US-001 (Stats summary projectId 필터): COMPLETE
+- US-002 (ModelPricing 관리 API): COMPLETE
+- US-003 (Rollup 재실행 API): COMPLETE
+- US-004 (프론트엔드 projectId 필터): COMPLETE
+- ./gradlew spotlessCheck build → BUILD SUCCESSFUL (20 tasks: 13 executed, 7 up-to-date)
+
+### Files created (신규)
+- monitoring-core: ModelPricingService, ModelPricingResult (service layer DTO)
+- monitoring-api: ModelPricingController, ModelPricingRequest, ModelPricingResponse
+- monitoring-api: RollupController
+- Tests: ModelPricingServiceTest, ModelPricingControllerTest, RollupControllerTest
+
+### Files modified (수정)
+- monitoring-core: StatsService.getSummary() — Long projectId 파라미터 추가
+- monitoring-core: ModelPricingRepository — findByModelOrderByEffectiveFromDesc 추가
+- monitoring-api: StatsController.summary() — @RequestParam(required=false) Long projectId 추가
+- monitoring-api: StatsControllerTest — getSummary mock 인자 업데이트, projectId 테스트 추가
+- frontend: App.tsx — projectId state + number input 추가
+- frontend: DailyChart.tsx — projectId prop 추가
+
+### Key decisions
+- ModelPricingResult record를 service 레이어에 신설: ArchUnit이 controller가 @Entity에 직접 의존 금지
+  (monitoring-api WebMvcTest 슬라이스에서는 monitoring-core의 ModelPricing entity가 classpath에 없음)
+- 검증(validation)은 service 레이어 수동 검사: spring-boot-starter-validation 의존성 추가 없이 구현
+  (기존 ProjectService 패턴과 동일, CLAUDE.md 규칙 준수)
+- CRLF → LF 변환: spotlessApply 실행으로 Windows 환경 개행 문자 일괄 정리
+
+### Out-of-scope findings
+- monitoring-client (Spring Boot Starter): 새 Gradle 모듈 추가 필요 → 사용자 승인 필요, 이번 세션 제외
