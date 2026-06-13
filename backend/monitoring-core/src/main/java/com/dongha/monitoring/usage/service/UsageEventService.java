@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class UsageEventService {
 
-  static final int MAX_BATCH_SIZE = 100;
+  private static final int MAX_BATCH_SIZE = 100;
 
   private final UsageEventRepository usageEventRepository;
 
