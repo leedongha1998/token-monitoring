@@ -19,6 +19,7 @@ public class GlobalExceptionHandler {
       case PROJECT_NOT_FOUND, API_KEY_NOT_FOUND -> HttpStatus.NOT_FOUND;
       case AUTH_INVALID -> HttpStatus.UNAUTHORIZED;
       case INVALID_REQUEST -> HttpStatus.BAD_REQUEST;
+      case BATCH_SIZE_EXCEEDED -> HttpStatus.PAYLOAD_TOO_LARGE;
     };
   }
 }

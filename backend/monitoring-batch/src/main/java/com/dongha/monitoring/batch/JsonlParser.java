@@ -1,0 +1,50 @@
+package com.dongha.monitoring.batch;
+
+import com.dongha.monitoring.usage.service.UsageEventRequest;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class JsonlParser {
+
+  private static final Pattern INPUT_TOKENS = Pattern.compile("\"input_tokens\"\\s*:\\s*(\\d+)");
+  private static final Pattern OUTPUT_TOKENS = Pattern.compile("\"output_tokens\"\\s*:\\s*(\\d+)");
+  private static final Pattern MODEL = Pattern.compile("\"model\"\\s*:\\s*\"(claude[^\"]+)\"");
+  private static final Pattern TIMESTAMP = Pattern.compile("\"timestamp\"\\s*:\\s*\"([^\"]+)\"");
+
+  public List<UsageEventRequest> parse(Path file) throws IOException {
+    try (var lines = Files.lines(file)) {
+      return lines
+          .filter(line -> line.contains("\"input_tokens\""))
+          .map(JsonlParser::parseLine)
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .toList();
+    }
+  }
+
+  private static Optional<UsageEventRequest> parseLine(String line) {
+    Matcher inputMatcher = INPUT_TOKENS.matcher(line);
+    Matcher outputMatcher = OUTPUT_TOKENS.matcher(line);
+    Matcher modelMatcher = MODEL.matcher(line);
+    if (!inputMatcher.find() || !outputMatcher.find() || !modelMatcher.find()) {
+      return Optional.empty();
+    }
+    int inputTokens = Integer.parseInt(inputMatcher.group(1));
+    int outputTokens = Integer.parseInt(outputMatcher.group(1));
+    String model = modelMatcher.group(1);
+
+    Matcher tsMatcher = TIMESTAMP.matcher(line);
+    Instant occurredAt = tsMatcher.find() ? Instant.parse(tsMatcher.group(1)) : Instant.now();
+
+    return Optional.of(
+        new UsageEventRequest(
+            UUID.randomUUID().toString(), model, inputTokens, outputTokens, occurredAt));
+  }
+}
