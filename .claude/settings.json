@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/check_git_commands.py"
+            "command": "node .claude/hooks/check_git_commands.js"
           }
         ]
       },
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/check_forbidden_paths.py"
+            "command": "node .claude/hooks/check_forbidden_paths.js"
           }
         ]
       },
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/check_forbidden_paths.py"
+            "command": "node .claude/hooks/check_forbidden_paths.js"
           }
         ]
       }
