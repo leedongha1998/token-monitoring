@@ -3,6 +3,7 @@ build/
 .gradle/
 *.jar
 !gradle/wrapper/gradle-wrapper.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
 
 # IDE
 .idea/
