@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface DailyRollupRepository extends JpaRepository<DailyRollup, Long> {
 
@@ -15,7 +18,11 @@ public interface DailyRollupRepository extends JpaRepository<DailyRollup, Long> 
 
   List<DailyRollup> findByDateBetween(LocalDate from, LocalDate to);
 
-  void deleteByProjectIdAndDate(Long projectId, LocalDate date);
+  @Modifying
+  @Query("DELETE FROM DailyRollup d WHERE d.projectId = :projectId AND d.date = :date")
+  void deleteByProjectIdAndDate(@Param("projectId") Long projectId, @Param("date") LocalDate date);
 
-  void deleteByDate(LocalDate date);
+  @Modifying
+  @Query("DELETE FROM DailyRollup d WHERE d.date = :date")
+  void deleteByDate(@Param("date") LocalDate date);
 }
