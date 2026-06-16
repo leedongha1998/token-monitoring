@@ -48,7 +48,8 @@ public class UsageEvent {
       String model,
       int inputTokens,
       int outputTokens,
-      Instant occurredAt) {
+      Instant occurredAt,
+      String rawPayload) {
     UsageEvent event = new UsageEvent();
     event.projectId = projectId;
     event.idempotencyKey = idempotencyKey;
@@ -56,6 +57,7 @@ public class UsageEvent {
     event.inputTokens = inputTokens;
     event.outputTokens = outputTokens;
     event.occurredAt = occurredAt;
+    event.rawPayload = rawPayload;
     return event;
   }
 
@@ -89,5 +91,36 @@ public class UsageEvent {
 
   public String getRawPayload() {
     return rawPayload;
+  }
+
+  public String getPromptSummary() {
+    if (rawPayload == null || rawPayload.isBlank()) return null;
+    final String key = "\"promptSummary\":\"";
+    int start = rawPayload.indexOf(key);
+    if (start == -1) return null;
+    start += key.length();
+    StringBuilder sb = new StringBuilder();
+    boolean escaped = false;
+    for (int i = start; i < rawPayload.length(); i++) {
+      char c = rawPayload.charAt(i);
+      if (escaped) {
+        switch (c) {
+          case '"' -> sb.append('"');
+          case '\\' -> sb.append('\\');
+          case 'n' -> sb.append('\n');
+          case 'r' -> sb.append('\r');
+          case 't' -> sb.append('\t');
+          default -> sb.append(c);
+        }
+        escaped = false;
+      } else if (c == '\\') {
+        escaped = true;
+      } else if (c == '"') {
+        break;
+      } else {
+        sb.append(c);
+      }
+    }
+    return sb.isEmpty() ? null : sb.toString();
   }
 }

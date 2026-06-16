@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -107,5 +108,57 @@ class ClaudeJsonlParserTest {
     // given – when – then
     assertThat(parser.parse("not-valid-json")).isEmpty();
     assertThat(parser.parse("")).isEmpty();
+  }
+
+  @Test
+  void user_타입_줄에서_텍스트_블록_프롬프트를_추출한다() {
+    // given
+    String line =
+        "{\"type\":\"user\","
+            + "\"message\":{\"content\":["
+            + "{\"type\":\"text\",\"text\":\"파일을 읽어줘\"}"
+            + "]}}";
+
+    // when
+    Optional<String> prompt = parser.extractUserPrompt(line);
+
+    // then
+    assertThat(prompt).contains("파일을 읽어줘");
+  }
+
+  @Test
+  void user_타입_줄에서_문자열_content_프롬프트를_추출한다() {
+    // given
+    String line = "{\"type\":\"user\",\"message\":{\"content\":\"안녕하세요\"}}";
+
+    // when
+    Optional<String> prompt = parser.extractUserPrompt(line);
+
+    // then
+    assertThat(prompt).contains("안녕하세요");
+  }
+
+  @Test
+  void parseLines_호출시_user_메시지가_다음_assistant_엔트리에_연결된다() {
+    // given
+    String userLine =
+        "{\"type\":\"user\","
+            + "\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"코드 리뷰해줘\"}]}}";
+    String assistantLine =
+        "{\"uuid\":\"uuid-1\","
+            + "\"type\":\"assistant\","
+            + "\"isSidechain\":false,"
+            + "\"timestamp\":\"2026-06-15T10:00:00Z\","
+            + "\"message\":{"
+            + "\"model\":\"claude-sonnet-4-6\","
+            + "\"usage\":{\"input_tokens\":50,\"output_tokens\":100}}}";
+
+    // when
+    List<JsonlEntry> entries = parser.parseLines(List.of(userLine, assistantLine));
+
+    // then
+    assertThat(entries).hasSize(1);
+    assertThat(entries.get(0).idempotencyKey()).isEqualTo("uuid-1");
+    assertThat(entries.get(0).promptSummary()).isEqualTo("코드 리뷰해줘");
   }
 }

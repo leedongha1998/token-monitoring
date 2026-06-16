@@ -59,6 +59,6 @@ public class JsonlParser {
         uuidMatcher.find() ? uuidMatcher.group(1) : UUID.randomUUID().toString();
 
     return Optional.of(
-        new UsageEventRequest(idempotencyKey, model, inputTokens, outputTokens, occurredAt));
+        new UsageEventRequest(idempotencyKey, model, inputTokens, outputTokens, occurredAt, null));
   }
 }

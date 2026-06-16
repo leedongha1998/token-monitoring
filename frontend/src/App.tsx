@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { DailyChart } from "./components/DailyChart";
 import { DailyStatsTable } from "./components/DailyStatsTable";
-import { SummaryCard } from "./components/SummaryCard";
+import { EventList } from "./components/EventList";
 import { ProjectManagement } from "./components/ProjectManagement";
+import { SummaryCard } from "./components/SummaryCard";
 
-type Tab = "dashboard" | "projects";
+type Tab = "dashboard" | "projects" | "events";
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -19,6 +20,7 @@ function thirtyDaysAgoStr() {
 const TABS: [Tab, string][] = [
   ["dashboard", "대시보드"],
   ["projects", "프로젝트 관리"],
+  ["events", "이벤트 목록"],
 ];
 
 export default function App() {
@@ -129,6 +131,8 @@ export default function App() {
       )}
 
       {tab === "projects" && <ProjectManagement />}
+
+      {tab === "events" && <EventList />}
     </div>
   );
 }

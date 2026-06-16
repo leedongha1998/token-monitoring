@@ -27,8 +27,9 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected boolean shouldNotFilter(HttpServletRequest request) {
-    // X-API-Key 인증은 수집 API(/v1/events/**)에만 적용한다. 관리 API는 내부망 가정.
-    return !request.getRequestURI().startsWith("/v1/events");
+    // X-API-Key 인증은 수집 API(POST /v1/events/**)에만 적용한다. GET은 대시보드용.
+    return !request.getRequestURI().startsWith("/v1/events")
+        || "GET".equalsIgnoreCase(request.getMethod());
   }
 
   @Override
