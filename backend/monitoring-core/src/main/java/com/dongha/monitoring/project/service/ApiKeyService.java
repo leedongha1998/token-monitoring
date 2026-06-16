@@ -6,6 +6,7 @@ import com.dongha.monitoring.project.domain.ApiKey;
 import com.dongha.monitoring.project.domain.Project;
 import com.dongha.monitoring.project.repository.ApiKeyRepository;
 import com.dongha.monitoring.project.repository.ProjectRepository;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,12 @@ public class ApiKeyService {
   public ApiKeyService(ApiKeyRepository apiKeyRepository, ProjectRepository projectRepository) {
     this.apiKeyRepository = apiKeyRepository;
     this.projectRepository = projectRepository;
+  }
+
+  public List<ApiKeyListItem> listByProject(Long projectId) {
+    return apiKeyRepository.findByProject_Id(projectId).stream()
+        .map(k -> new ApiKeyListItem(k.getId(), k.getPrefix(), k.isActive(), k.getCreatedAt()))
+        .toList();
   }
 
   public boolean validateKey(String rawKey) {

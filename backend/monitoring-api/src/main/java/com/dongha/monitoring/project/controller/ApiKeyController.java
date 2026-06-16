@@ -2,8 +2,10 @@ package com.dongha.monitoring.project.controller;
 
 import com.dongha.monitoring.project.service.ApiKeyService;
 import java.net.URI;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +18,11 @@ public class ApiKeyController {
 
   public ApiKeyController(ApiKeyService apiKeyService) {
     this.apiKeyService = apiKeyService;
+  }
+
+  @GetMapping("/v1/projects/{projectId}/api-keys")
+  public List<ApiKeyListResponse> list(@PathVariable Long projectId) {
+    return apiKeyService.listByProject(projectId).stream().map(ApiKeyListResponse::from).toList();
   }
 
   @PostMapping("/v1/projects/{projectId}/api-keys")

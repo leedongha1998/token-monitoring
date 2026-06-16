@@ -3,16 +3,19 @@ package com.dongha.monitoring.project.controller;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
+import com.dongha.monitoring.project.service.ApiKeyListItem;
 import com.dongha.monitoring.project.service.ApiKeyResult;
 import com.dongha.monitoring.project.service.ApiKeyService;
 import com.dongha.monitoring.project.service.ProjectService;
 import java.time.Instant;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -70,5 +73,19 @@ class ApiKeyControllerTest {
         .perform(delete("/v1/api-keys/99"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("PROJECT-002"));
+  }
+
+  @Test
+  void 프로젝트_API키_목록_조회시_200과_목록을_반환한다() throws Exception {
+    // given
+    ApiKeyListItem item = new ApiKeyListItem(1L, "abcd1234", true, Instant.now());
+    when(apiKeyService.listByProject(1L)).thenReturn(List.of(item));
+
+    // when & then
+    mockMvc
+        .perform(get("/v1/projects/1/api-keys"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].prefix").value("abcd1234"))
+        .andExpect(jsonPath("$[0].active").value(true));
   }
 }
