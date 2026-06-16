@@ -51,6 +51,46 @@ class JsonlParserTest {
   }
 
   @Test
+  void uuid_필드가_있으면_idempotencyKey로_사용한다() throws Exception {
+    // given
+    String line =
+        "{\"uuid\":\"fixed-uuid-1234\",\"type\":\"assistant\","
+            + "\"message\":{\"model\":\"claude-sonnet-4-6\","
+            + "\"usage\":{\"input_tokens\":10,\"output_tokens\":5}},"
+            + "\"timestamp\":\"2026-06-15T00:00:00Z\"}";
+    Path file = tempDir.resolve("test.jsonl");
+    Files.writeString(file, line + "\n");
+
+    // when
+    List<UsageEventRequest> results = parser.parse(file);
+
+    // then
+    assertThat(results).hasSize(1);
+    assertThat(results.get(0).idempotencyKey()).isEqualTo("fixed-uuid-1234");
+  }
+
+  @Test
+  void 캐시_토큰을_입력_토큰에_합산한다() throws Exception {
+    // given
+    String line =
+        "{\"uuid\":\"uuid-cache\",\"type\":\"assistant\","
+            + "\"message\":{\"model\":\"claude-sonnet-4-6\","
+            + "\"usage\":{\"input_tokens\":3,\"cache_creation_input_tokens\":100,"
+            + "\"cache_read_input_tokens\":50,\"output_tokens\":20}},"
+            + "\"timestamp\":\"2026-06-15T00:00:00Z\"}";
+    Path file = tempDir.resolve("cache.jsonl");
+    Files.writeString(file, line + "\n");
+
+    // when
+    List<UsageEventRequest> results = parser.parse(file);
+
+    // then
+    assertThat(results).hasSize(1);
+    // 3 + 100 + 50 = 153
+    assertThat(results.get(0).inputTokens()).isEqualTo(153);
+  }
+
+  @Test
   void 여러_라인이_혼재할_때_usage가_있는_라인만_파싱한다() throws Exception {
     // given
     String assistantLine =
