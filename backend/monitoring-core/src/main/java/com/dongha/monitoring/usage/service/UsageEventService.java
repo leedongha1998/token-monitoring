@@ -2,10 +2,15 @@ package com.dongha.monitoring.usage.service;
 
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
+import com.dongha.monitoring.project.service.PageResult;
 import com.dongha.monitoring.usage.domain.UsageEvent;
 import com.dongha.monitoring.usage.repository.UsageEventRepository;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +38,8 @@ public class UsageEventService {
             request.model(),
             request.inputTokens(),
             request.outputTokens(),
-            request.occurredAt()));
+            request.occurredAt(),
+            buildRawPayload(request.promptSummary())));
     return IngestStatus.ACCEPTED;
   }
 
@@ -59,12 +65,41 @@ public class UsageEventService {
                 req.model(),
                 req.inputTokens(),
                 req.outputTokens(),
-                req.occurredAt()));
+                req.occurredAt(),
+                buildRawPayload(req.promptSummary())));
         status = IngestStatus.ACCEPTED;
         accepted++;
       }
       results.add(new IngestResult(req.idempotencyKey(), status));
     }
     return new BatchIngestResponse(accepted, duplicated, results);
+  }
+
+  public PageResult<UsageEventResult> findEvents(
+      Long projectId, Instant from, Instant to, int page, int size) {
+    PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "occurredAt"));
+    Page<UsageEvent> result =
+        projectId != null
+            ? usageEventRepository.findByProjectAndDateRange(projectId, from, to, pageable)
+            : usageEventRepository.findByDateRange(from, to, pageable);
+    return new PageResult<>(
+        result.getContent().stream().map(UsageEventResult::from).toList(),
+        result.getTotalElements(),
+        result.getTotalPages(),
+        result.getNumber());
+  }
+
+  private static String buildRawPayload(String promptSummary) {
+    if (promptSummary == null || promptSummary.isBlank()) return null;
+    String summary = promptSummary.trim();
+    if (summary.length() > 200) summary = summary.substring(0, 200);
+    String escaped =
+        summary
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t");
+    return "{\"promptSummary\":\"" + escaped + "\"}";
   }
 }

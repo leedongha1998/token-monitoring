@@ -12,7 +12,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,11 +76,9 @@ public class JsonlIngestService {
     if (offset >= fileSize) return;
 
     List<String> lines = readLinesFrom(file, offset);
+    List<JsonlEntry> entries = parser.parseLines(lines);
     int accepted = 0;
-    for (String line : lines) {
-      Optional<JsonlEntry> parsed = parser.parse(line);
-      if (parsed.isEmpty()) continue;
-      JsonlEntry entry = parsed.get();
+    for (JsonlEntry entry : entries) {
       try {
         usageEventService.ingest(
             defaultProjectId,
@@ -90,7 +87,8 @@ public class JsonlIngestService {
                 entry.model(),
                 entry.inputTokens(),
                 entry.outputTokens(),
-                entry.occurredAt()));
+                entry.occurredAt(),
+                entry.promptSummary()));
         accepted++;
       } catch (Exception e) {
         log.warn("이벤트 수집 실패: key={}, error={}", entry.idempotencyKey(), e.getMessage());

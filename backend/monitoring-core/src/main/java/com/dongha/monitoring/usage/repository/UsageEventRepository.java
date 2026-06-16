@@ -5,6 +5,8 @@ import com.dongha.monitoring.usage.domain.UsageEvent;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,19 @@ public interface UsageEventRepository extends JpaRepository<UsageEvent, Long> {
   Optional<UsageEvent> findByIdempotencyKey(String idempotencyKey);
 
   boolean existsByIdempotencyKey(String idempotencyKey);
+
+  @Query(
+      "SELECT u FROM UsageEvent u WHERE u.projectId = :projectId"
+          + " AND u.occurredAt >= :from AND u.occurredAt < :to")
+  Page<UsageEvent> findByProjectAndDateRange(
+      @Param("projectId") Long projectId,
+      @Param("from") Instant from,
+      @Param("to") Instant to,
+      Pageable pageable);
+
+  @Query("SELECT u FROM UsageEvent u WHERE u.occurredAt >= :from AND u.occurredAt < :to")
+  Page<UsageEvent> findByDateRange(
+      @Param("from") Instant from, @Param("to") Instant to, Pageable pageable);
 
   @Query(
       "SELECT new com.dongha.monitoring.usage.domain.UsageAggregateResult("

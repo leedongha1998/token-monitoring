@@ -1,8 +1,11 @@
 package com.dongha.monitoring.usage.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -10,10 +13,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
 import com.dongha.monitoring.project.service.ApiKeyService;
+import com.dongha.monitoring.project.service.PageResult;
 import com.dongha.monitoring.usage.service.BatchIngestResponse;
 import com.dongha.monitoring.usage.service.IngestResult;
 import com.dongha.monitoring.usage.service.IngestStatus;
+import com.dongha.monitoring.usage.service.UsageEventResult;
 import com.dongha.monitoring.usage.service.UsageEventService;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -125,5 +131,27 @@ class UsageEventControllerTest {
                 .content(batchBody))
         .andExpect(status().isPayloadTooLarge())
         .andExpect(jsonPath("$.code").value("USAGE-001"));
+  }
+
+  @Test
+  void 이벤트_목록_조회시_200과_페이지_결과를_반환한다() throws Exception {
+    // given
+    Instant occurredAt = Instant.parse("2026-06-13T00:00:00Z");
+    UsageEventResult item =
+        new UsageEventResult(1L, "claude-sonnet-4-5", 100, 50, occurredAt, null);
+    PageResult<UsageEventResult> pageResult = new PageResult<>(List.of(item), 1L, 1, 0);
+    when(usageEventService.findEvents(
+            isNull(), any(Instant.class), any(Instant.class), anyInt(), anyInt()))
+        .thenReturn(pageResult);
+
+    // when & then
+    mockMvc
+        .perform(
+            get("/v1/events")
+                .param("from", "2026-06-13T00:00:00Z")
+                .param("to", "2026-06-14T00:00:00Z"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.totalElements").value(1))
+        .andExpect(jsonPath("$.content[0].model").value("claude-sonnet-4-5"));
   }
 }

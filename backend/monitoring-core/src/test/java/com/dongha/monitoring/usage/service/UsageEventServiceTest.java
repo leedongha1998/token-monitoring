@@ -3,12 +3,14 @@ package com.dongha.monitoring.usage.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
+import com.dongha.monitoring.project.service.PageResult;
 import com.dongha.monitoring.usage.domain.UsageEvent;
 import com.dongha.monitoring.usage.repository.UsageEventRepository;
 import java.time.Instant;
@@ -20,6 +22,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class UsageEventServiceTest {
@@ -29,7 +34,7 @@ class UsageEventServiceTest {
 
   private static final Long PROJECT_ID = 1L;
   private static final UsageEventRequest SAMPLE_REQUEST =
-      new UsageEventRequest("idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now());
+      new UsageEventRequest("idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null);
 
   @Test
   void 신규_idempotencyKey로_요청하면_저장하고_ACCEPTED를_반환한다() {
@@ -62,9 +67,9 @@ class UsageEventServiceTest {
   void 배치에서_일부_중복_키가_있으면_부분_성공으로_처리한다() {
     // given
     UsageEventRequest req1 =
-        new UsageEventRequest("key-1", "claude-sonnet-4-5", 10, 5, Instant.now());
+        new UsageEventRequest("key-1", "claude-sonnet-4-5", 10, 5, Instant.now(), null);
     UsageEventRequest req2 =
-        new UsageEventRequest("key-2", "claude-sonnet-4-5", 20, 10, Instant.now());
+        new UsageEventRequest("key-2", "claude-sonnet-4-5", 20, 10, Instant.now(), null);
     when(usageEventRepository.existsByIdempotencyKey("key-1")).thenReturn(false);
     when(usageEventRepository.existsByIdempotencyKey("key-2")).thenReturn(true);
     when(usageEventRepository.save(any(UsageEvent.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -86,7 +91,9 @@ class UsageEventServiceTest {
     List<UsageEventRequest> events =
         IntStream.range(0, 101)
             .mapToObj(
-                i -> new UsageEventRequest("key-" + i, "claude-sonnet-4-5", 1, 1, Instant.now()))
+                i ->
+                    new UsageEventRequest(
+                        "key-" + i, "claude-sonnet-4-5", 1, 1, Instant.now(), null))
             .toList();
 
     // when & then
@@ -106,5 +113,25 @@ class UsageEventServiceTest {
     assertThat(response.accepted()).isEqualTo(0);
     assertThat(response.duplicated()).isEqualTo(0);
     assertThat(response.results()).isEmpty();
+  }
+
+  @Test
+  void projectId_조건으로_이벤트_목록을_조회한다() {
+    // given
+    Instant from = Instant.parse("2026-06-01T00:00:00Z");
+    Instant to = Instant.parse("2026-06-02T00:00:00Z");
+    UsageEvent event =
+        UsageEvent.create(PROJECT_ID, "idem-1", "claude-sonnet-4-5", 100, 50, from, null);
+    Page<UsageEvent> page = new PageImpl<>(List.of(event));
+    when(usageEventRepository.findByProjectAndDateRange(
+            eq(PROJECT_ID), eq(from), eq(to), any(Pageable.class)))
+        .thenReturn(page);
+
+    // when
+    PageResult<UsageEventResult> result = usageEventService.findEvents(PROJECT_ID, from, to, 0, 50);
+
+    // then
+    assertThat(result.content()).hasSize(1);
+    assertThat(result.content().get(0).model()).isEqualTo("claude-sonnet-4-5");
   }
 }
