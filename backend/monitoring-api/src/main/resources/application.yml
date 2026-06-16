@@ -14,6 +14,14 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+jsonl:
+  scan:
+    root-dir: ${user.home}/.claude/projects
+    project-id: ${JSONL_PROJECT_ID:}
+    enabled: ${JSONL_SCAN_ENABLED:false}
+    interval: PT5M
+    state-file: ${user.home}/.claude/.monitoring-state.json
+
 springdoc:
   swagger-ui:
     path: /docs

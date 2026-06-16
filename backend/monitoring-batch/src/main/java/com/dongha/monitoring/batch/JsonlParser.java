@@ -17,6 +17,11 @@ public class JsonlParser {
   private static final Pattern OUTPUT_TOKENS = Pattern.compile("\"output_tokens\"\\s*:\\s*(\\d+)");
   private static final Pattern MODEL = Pattern.compile("\"model\"\\s*:\\s*\"(claude[^\"]+)\"");
   private static final Pattern TIMESTAMP = Pattern.compile("\"timestamp\"\\s*:\\s*\"([^\"]+)\"");
+  private static final Pattern UUID_FIELD = Pattern.compile("\"uuid\"\\s*:\\s*\"([^\"]+)\"");
+  private static final Pattern CACHE_CREATION_TOKENS =
+      Pattern.compile("\"cache_creation_input_tokens\"\\s*:\\s*(\\d+)");
+  private static final Pattern CACHE_READ_TOKENS =
+      Pattern.compile("\"cache_read_input_tokens\"\\s*:\\s*(\\d+)");
 
   public List<UsageEventRequest> parse(Path file) throws IOException {
     try (var lines = Files.lines(file)) {
@@ -40,11 +45,20 @@ public class JsonlParser {
     int outputTokens = Integer.parseInt(outputMatcher.group(1));
     String model = modelMatcher.group(1);
 
+    // Cache tokens are billed alongside regular input tokens
+    Matcher cacheCreationMatcher = CACHE_CREATION_TOKENS.matcher(line);
+    if (cacheCreationMatcher.find()) inputTokens += Integer.parseInt(cacheCreationMatcher.group(1));
+    Matcher cacheReadMatcher = CACHE_READ_TOKENS.matcher(line);
+    if (cacheReadMatcher.find()) inputTokens += Integer.parseInt(cacheReadMatcher.group(1));
+
     Matcher tsMatcher = TIMESTAMP.matcher(line);
     Instant occurredAt = tsMatcher.find() ? Instant.parse(tsMatcher.group(1)) : Instant.now();
 
+    Matcher uuidMatcher = UUID_FIELD.matcher(line);
+    String idempotencyKey =
+        uuidMatcher.find() ? uuidMatcher.group(1) : UUID.randomUUID().toString();
+
     return Optional.of(
-        new UsageEventRequest(
-            UUID.randomUUID().toString(), model, inputTokens, outputTokens, occurredAt));
+        new UsageEventRequest(idempotencyKey, model, inputTokens, outputTokens, occurredAt));
   }
 }
