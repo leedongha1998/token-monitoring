@@ -6,6 +6,7 @@ import com.dongha.monitoring.rollup.service.DailyRollupService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +32,13 @@ class IngestionIntegrationTest extends AbstractIntegrationTest {
     jsonHeaders.setContentType(MediaType.APPLICATION_JSON);
 
     // 프로젝트 생성
+    String projectName = "통합테스트-" + UUID.randomUUID().toString().substring(0, 8);
     ResponseEntity<String> projectRes =
         restTemplate.exchange(
             "/v1/projects",
             HttpMethod.POST,
-            new HttpEntity<>("{\"name\":\"통합테스트\",\"description\":\"통합 테스트용\"}", jsonHeaders),
+            new HttpEntity<>(
+                "{\"name\":\"" + projectName + "\",\"description\":\"통합 테스트용\"}", jsonHeaders),
             String.class);
     assertThat(projectRes.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     String location = projectRes.getHeaders().getLocation().toString();

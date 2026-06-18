@@ -3,6 +3,8 @@ package com.dongha.monitoring.project.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dongha.monitoring.common.exception.BusinessException;
@@ -14,6 +16,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
@@ -86,5 +89,34 @@ class ProjectServiceTest {
     assertThat(result.content()).hasSize(1);
     assertThat(result.content().get(0).name()).isEqualTo("p1");
     assertThat(result.totalElements()).isEqualTo(1L);
+  }
+
+  @Test
+  void 디렉토리명으로_기존_프로젝트를_찾으면_저장하지_않는다() {
+    // given
+    Project existing = Project.create("C--Workspace-my-app", "Claude Code 자동 감지");
+    when(projectRepository.findByName("C--Workspace-my-app")).thenReturn(Optional.of(existing));
+
+    // when
+    service.findOrCreateByDirectoryName("C--Workspace-my-app");
+
+    // then
+    verify(projectRepository, never()).save(any());
+  }
+
+  @Test
+  void 디렉토리명으로_프로젝트가_없으면_새로_생성한다() {
+    // given
+    when(projectRepository.findByName("C--Workspace-my-app")).thenReturn(Optional.empty());
+    Project saved = Project.create("C--Workspace-my-app", "Claude Code 자동 감지");
+    when(projectRepository.save(any(Project.class))).thenReturn(saved);
+
+    // when
+    service.findOrCreateByDirectoryName("C--Workspace-my-app");
+
+    // then
+    ArgumentCaptor<Project> captor = ArgumentCaptor.forClass(Project.class);
+    verify(projectRepository).save(captor.capture());
+    assertThat(captor.getValue().getName()).isEqualTo("C--Workspace-my-app");
   }
 }
