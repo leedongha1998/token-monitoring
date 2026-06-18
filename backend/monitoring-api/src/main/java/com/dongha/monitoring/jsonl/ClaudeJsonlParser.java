@@ -29,8 +29,16 @@ public class ClaudeJsonlParser {
 
   /** 여러 줄을 순서대로 처리하며 user 메시지를 다음 assistant 엔트리에 연결. */
   public List<JsonlEntry> parseLines(List<String> lines) {
+    return parseLines(lines, null).entries();
+  }
+
+  /**
+   * 이전 스캔 배치에서 미연결된 user 프롬프트(initialUserPrompt)를 이어받아 처리. 이번 배치에서도 미연결로 남은 프롬프트는
+   * ParseLinesResult.pendingUserPrompt()로 반환됨.
+   */
+  public ParseLinesResult parseLines(List<String> lines, String initialUserPrompt) {
     List<JsonlEntry> result = new ArrayList<>();
-    String lastUserPrompt = null;
+    String lastUserPrompt = initialUserPrompt;
     for (String line : lines) {
       Optional<String> promptOpt = extractUserPrompt(line);
       if (promptOpt.isPresent()) {
@@ -43,7 +51,7 @@ public class ClaudeJsonlParser {
         lastUserPrompt = null;
       }
     }
-    return result;
+    return new ParseLinesResult(result, lastUserPrompt);
   }
 
   /** user 타입 줄에서 프롬프트 텍스트 추출. */

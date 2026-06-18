@@ -1,6 +1,7 @@
 package com.dongha.monitoring.jsonl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,6 +21,7 @@ public class JsonlStateStore {
   private final Path stateFile;
   private final ObjectMapper objectMapper;
   private final Map<String, Long> offsets;
+  private final Map<String, String> pendingPrompts;
 
   public JsonlStateStore(
       @Value("${jsonl.scan.state-file:${user.home}/.claude/.monitoring-state.json}")
@@ -27,7 +29,9 @@ public class JsonlStateStore {
       ObjectMapper objectMapper) {
     this.stateFile = Path.of(stateFilePath);
     this.objectMapper = objectMapper;
-    this.offsets = load();
+    State loaded = load();
+    this.offsets = loaded.offsets();
+    this.pendingPrompts = loaded.pendingPrompts();
   }
 
   public long getOffset(Path file) {
@@ -38,22 +42,52 @@ public class JsonlStateStore {
     offsets.put(file.toAbsolutePath().toString(), offset);
   }
 
+  public String getPendingUserPrompt(Path file) {
+    return pendingPrompts.get(file.toAbsolutePath().toString());
+  }
+
+  public void setPendingUserPrompt(Path file, String prompt) {
+    String key = file.toAbsolutePath().toString();
+    if (prompt == null) {
+      pendingPrompts.remove(key);
+    } else {
+      pendingPrompts.put(key, prompt);
+    }
+  }
+
   public void save() {
     try {
       Files.createDirectories(stateFile.getParent());
-      objectMapper.writeValue(stateFile.toFile(), offsets);
+      objectMapper.writeValue(stateFile.toFile(), new State(offsets, pendingPrompts));
     } catch (IOException e) {
       log.warn("상태 파일 저장 실패: {}", stateFile);
     }
   }
 
-  private Map<String, Long> load() {
-    if (!Files.exists(stateFile)) return new HashMap<>();
+  private State load() {
+    if (!Files.exists(stateFile)) return new State(new HashMap<>(), new HashMap<>());
     try {
-      return objectMapper.readValue(stateFile.toFile(), new TypeReference<Map<String, Long>>() {});
+      JsonNode root = objectMapper.readTree(stateFile.toFile());
+      if (root.has("offsets")) {
+        Map<String, Long> loadedOffsets =
+            objectMapper.convertValue(
+                root.get("offsets"), new TypeReference<Map<String, Long>>() {});
+        Map<String, String> loadedPrompts =
+            root.has("pendingPrompts")
+                ? objectMapper.convertValue(
+                    root.get("pendingPrompts"), new TypeReference<Map<String, String>>() {})
+                : new HashMap<>();
+        return new State(loadedOffsets, loadedPrompts);
+      }
+      // 구버전 포맷(flat Map<String,Long>) 마이그레이션
+      Map<String, Long> legacy =
+          objectMapper.convertValue(root, new TypeReference<Map<String, Long>>() {});
+      return new State(legacy, new HashMap<>());
     } catch (IOException e) {
       log.warn("상태 파일 로드 실패, 초기화: {}", stateFile);
-      return new HashMap<>();
+      return new State(new HashMap<>(), new HashMap<>());
     }
   }
+
+  private record State(Map<String, Long> offsets, Map<String, String> pendingPrompts) {}
 }

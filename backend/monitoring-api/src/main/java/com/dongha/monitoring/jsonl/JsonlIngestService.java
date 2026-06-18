@@ -79,10 +79,12 @@ public class JsonlIngestService {
     if (offset >= fileSize) return;
 
     Long projectId = resolveProjectId(file);
+    String pendingPrompt = stateStore.getPendingUserPrompt(file);
     List<String> lines = readLinesFrom(file, offset);
-    List<JsonlEntry> entries = parser.parseLines(lines);
+    ParseLinesResult parsed = parser.parseLines(lines, pendingPrompt);
+    stateStore.setPendingUserPrompt(file, parsed.pendingUserPrompt());
     int accepted = 0;
-    for (JsonlEntry entry : entries) {
+    for (JsonlEntry entry : parsed.entries()) {
       try {
         usageEventService.ingest(
             projectId,

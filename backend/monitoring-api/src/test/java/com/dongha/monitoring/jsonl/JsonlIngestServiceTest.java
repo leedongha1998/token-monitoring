@@ -59,7 +59,8 @@ class JsonlIngestServiceTest {
     JsonlEntry entry =
         new JsonlEntry("auto-uuid", "claude-sonnet-4-6", 100, 50, Instant.now(), null);
     when(stateStore.getOffset(file)).thenReturn(0L);
-    when(parser.parseLines(anyList())).thenReturn(List.of(entry));
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
     when(projectService.findOrCreateByDirectoryName("C--Workspace-my-app")).thenReturn(2L);
     when(usageEventService.ingest(eq(2L), any(UsageEventRequest.class)))
         .thenReturn(IngestStatus.ACCEPTED);
@@ -87,7 +88,8 @@ class JsonlIngestServiceTest {
     JsonlEntry entry =
         new JsonlEntry("test-uuid", "claude-sonnet-4-6", 100, 50, Instant.now(), null);
     when(stateStore.getOffset(file)).thenReturn(0L);
-    when(parser.parseLines(anyList())).thenReturn(List.of(entry));
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
     when(usageEventService.ingest(eq(1L), any(UsageEventRequest.class)))
         .thenReturn(IngestStatus.ACCEPTED);
 
@@ -138,7 +140,8 @@ class JsonlIngestServiceTest {
 
     JsonlEntry entry = new JsonlEntry("good-uuid", "claude-haiku-4-5", 10, 5, Instant.now(), null);
     when(stateStore.getOffset(file)).thenReturn(0L);
-    when(parser.parseLines(anyList())).thenReturn(List.of(entry));
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
     when(usageEventService.ingest(eq(1L), any())).thenReturn(IngestStatus.ACCEPTED);
 
     JsonlIngestService service =
