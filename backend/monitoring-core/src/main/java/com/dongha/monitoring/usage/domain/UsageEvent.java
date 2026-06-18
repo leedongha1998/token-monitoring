@@ -93,6 +93,11 @@ public class UsageEvent {
     return rawPayload;
   }
 
+  public void fillRawPayload(String newRawPayload) {
+    if (this.rawPayload != null) return;
+    this.rawPayload = newRawPayload;
+  }
+
   public String getPromptSummary() {
     if (rawPayload == null || rawPayload.isBlank()) return null;
     final String key = "\"promptSummary\":\"";

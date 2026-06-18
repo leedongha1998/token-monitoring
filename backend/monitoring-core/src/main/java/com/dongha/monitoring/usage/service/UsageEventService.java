@@ -28,7 +28,11 @@ public class UsageEventService {
 
   @Transactional
   public IngestStatus ingest(Long projectId, UsageEventRequest request) {
-    if (usageEventRepository.existsByIdempotencyKey(request.idempotencyKey())) {
+    String newPayload = buildRawPayload(request.promptSummary());
+    java.util.Optional<UsageEvent> existing =
+        usageEventRepository.findByIdempotencyKey(request.idempotencyKey());
+    if (existing.isPresent()) {
+      if (newPayload != null) existing.get().fillRawPayload(newPayload);
       return IngestStatus.DUPLICATED;
     }
     usageEventRepository.save(
@@ -39,7 +43,7 @@ public class UsageEventService {
             request.inputTokens(),
             request.outputTokens(),
             request.occurredAt(),
-            buildRawPayload(request.promptSummary())));
+            newPayload));
     return IngestStatus.ACCEPTED;
   }
 

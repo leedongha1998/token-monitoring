@@ -16,6 +16,7 @@ import com.dongha.monitoring.usage.repository.UsageEventRepository;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +40,7 @@ class UsageEventServiceTest {
   @Test
   void 신규_idempotencyKey로_요청하면_저장하고_ACCEPTED를_반환한다() {
     // given
-    when(usageEventRepository.existsByIdempotencyKey("idem-key-1")).thenReturn(false);
+    when(usageEventRepository.findByIdempotencyKey("idem-key-1")).thenReturn(Optional.empty());
     when(usageEventRepository.save(any(UsageEvent.class))).thenAnswer(inv -> inv.getArgument(0));
 
     // when
@@ -53,7 +54,10 @@ class UsageEventServiceTest {
   @Test
   void 중복_idempotencyKey로_요청하면_저장하지_않고_DUPLICATED를_반환한다() {
     // given
-    when(usageEventRepository.existsByIdempotencyKey("idem-key-1")).thenReturn(true);
+    UsageEvent existing =
+        UsageEvent.create(
+            PROJECT_ID, "idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null);
+    when(usageEventRepository.findByIdempotencyKey("idem-key-1")).thenReturn(Optional.of(existing));
 
     // when
     IngestStatus status = usageEventService.ingest(PROJECT_ID, SAMPLE_REQUEST);
