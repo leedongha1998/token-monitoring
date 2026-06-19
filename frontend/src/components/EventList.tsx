@@ -12,8 +12,14 @@ function sevenDaysAgoIso() {
   return d.toISOString().slice(0, 10);
 }
 
-function localDateToInstant(dateStr: string): string {
+function localDateToInstantStart(dateStr: string): string {
   return dateStr + "T00:00:00Z";
+}
+
+function localDateToInstantEnd(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00Z");
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
 }
 
 export function EventList() {
@@ -34,8 +40,8 @@ export function EventList() {
     setLoading(true);
     setError(null);
     fetchEvents({
-      from: localDateToInstant(from),
-      to: localDateToInstant(to),
+      from: localDateToInstantStart(from),
+      to: localDateToInstantEnd(to),
       projectId: projectId ? Number(projectId) : undefined,
       page,
       size: SIZE,
