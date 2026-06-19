@@ -10,7 +10,9 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +52,19 @@ public class DailyRollupService {
               agg.totalInputTokens(),
               agg.totalOutputTokens(),
               totalCost));
+    }
+  }
+
+  @Transactional
+  public void rollupMissingDates(LocalDate today) {
+    Instant earliest = usageEventRepository.findEarliestOccurredAt().orElse(null);
+    if (earliest == null) return;
+    LocalDate startDate = earliest.atZone(ZoneOffset.UTC).toLocalDate();
+    Set<LocalDate> alreadyRolledUp = new HashSet<>(dailyRollupRepository.findDistinctDates());
+    for (LocalDate date = startDate; !date.isAfter(today); date = date.plusDays(1)) {
+      if (!alreadyRolledUp.contains(date)) {
+        rollup(date);
+      }
     }
   }
 

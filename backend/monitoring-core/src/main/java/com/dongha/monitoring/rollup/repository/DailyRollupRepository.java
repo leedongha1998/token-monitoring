@@ -22,6 +22,9 @@ public interface DailyRollupRepository extends JpaRepository<DailyRollup, Long> 
   @Query("DELETE FROM DailyRollup d WHERE d.projectId = :projectId AND d.date = :date")
   void deleteByProjectIdAndDate(@Param("projectId") Long projectId, @Param("date") LocalDate date);
 
+  @Query("SELECT DISTINCT d.date FROM DailyRollup d")
+  List<LocalDate> findDistinctDates();
+
   @Modifying
   @Query("DELETE FROM DailyRollup d WHERE d.date = :date")
   void deleteByDate(@Param("date") LocalDate date);

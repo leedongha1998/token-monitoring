@@ -16,6 +16,7 @@ import com.dongha.monitoring.usage.repository.UsageEventRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,39 @@ class DailyRollupServiceTest {
 
     // then
     verify(dailyRollupRepository, never()).save(any());
+  }
+
+  @Test
+  void rollupMissingDates_롤업이_없는_날짜만_실행한다() {
+    // given
+    LocalDate june10 = LocalDate.of(2026, 6, 10);
+    LocalDate june11 = LocalDate.of(2026, 6, 11);
+    LocalDate june12 = LocalDate.of(2026, 6, 12);
+    Instant earliest = june10.atStartOfDay(ZoneOffset.UTC).toInstant();
+
+    when(usageEventRepository.findEarliestOccurredAt()).thenReturn(Optional.of(earliest));
+    when(dailyRollupRepository.findDistinctDates()).thenReturn(List.of(june11));
+    when(usageEventRepository.aggregateByDateRange(any(), any())).thenReturn(List.of());
+
+    // when
+    dailyRollupService.rollupMissingDates(june12);
+
+    // then — june11은 이미 롤업됨, june10·june12만 삭제 후 재생성
+    verify(dailyRollupRepository).deleteByDate(june10);
+    verify(dailyRollupRepository).deleteByDate(june12);
+    verify(dailyRollupRepository, never()).deleteByDate(june11);
+  }
+
+  @Test
+  void rollupMissingDates_이벤트가_없으면_아무것도_하지_않는다() {
+    // given
+    when(usageEventRepository.findEarliestOccurredAt()).thenReturn(Optional.empty());
+
+    // when
+    dailyRollupService.rollupMissingDates(LocalDate.of(2026, 6, 12));
+
+    // then
+    verify(usageEventRepository, never()).aggregateByDateRange(any(), any());
   }
 
   @Test
