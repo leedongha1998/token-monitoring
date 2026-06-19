@@ -100,8 +100,13 @@ public class UsageEvent {
 
   public String getPromptSummary() {
     if (rawPayload == null || rawPayload.isBlank()) return null;
-    final String key = "\"promptSummary\":\"";
+    // PostgreSQL JSONB normalizes JSON by adding a space after colons; try both forms.
+    String key = "\"promptSummary\": \"";
     int start = rawPayload.indexOf(key);
+    if (start == -1) {
+      key = "\"promptSummary\":\"";
+      start = rawPayload.indexOf(key);
+    }
     if (start == -1) return null;
     start += key.length();
     StringBuilder sb = new StringBuilder();
