@@ -7,6 +7,7 @@ import com.dongha.monitoring.pricing.repository.ModelPricingRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,5 +51,14 @@ public class ModelPricingService {
     return modelPricingRepository.findByModelOrderByEffectiveFromDesc(model).stream()
         .map(ModelPricingResult::from)
         .toList();
+  }
+
+  public Optional<ModelPricingResult> findEffectivePricing(String model, Instant at) {
+    if (model == null || model.isBlank()) {
+      throw new BusinessException(ErrorCode.INVALID_REQUEST);
+    }
+    return modelPricingRepository
+        .findTopByModelAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(model, at)
+        .map(ModelPricingResult::from);
   }
 }

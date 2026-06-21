@@ -12,6 +12,7 @@ import com.dongha.monitoring.pricing.repository.ModelPricingRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -105,6 +106,54 @@ class ModelPricingServiceTest {
   @Test
   void 모델명이_빈_문자열이면_조회_시_예외를_던진다() {
     assertThatThrownBy(() -> modelPricingService.findByModel(""))
+        .isInstanceOf(BusinessException.class);
+  }
+
+  @Test
+  void 유효한_날짜로_조회하면_해당_날짜_기준_최신_단가를_반환한다() {
+    // given
+    ModelPricing pricing =
+        ModelPricing.of(
+            "claude-sonnet-4-6",
+            new BigDecimal("3.000000"),
+            new BigDecimal("15.000000"),
+            Instant.parse("2026-01-01T00:00:00Z"));
+    Instant queryAt = Instant.parse("2026-06-01T00:00:00Z");
+    when(modelPricingRepository.findTopByModelAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            "claude-sonnet-4-6", queryAt))
+        .thenReturn(Optional.of(pricing));
+
+    // when
+    Optional<ModelPricingResult> result =
+        modelPricingService.findEffectivePricing("claude-sonnet-4-6", queryAt);
+
+    // then
+    assertThat(result).isPresent();
+    assertThat(result.get().model()).isEqualTo("claude-sonnet-4-6");
+    assertThat(result.get().inputPricePerMToken()).isEqualByComparingTo(new BigDecimal("3.000000"));
+  }
+
+  @Test
+  void 단가_이력이_없는_날짜로_조회하면_빈_결과를_반환한다() {
+    // given
+    Instant queryAt = Instant.parse("2025-12-01T00:00:00Z");
+    when(modelPricingRepository.findTopByModelAndEffectiveFromLessThanEqualOrderByEffectiveFromDesc(
+            "claude-sonnet-4-6", queryAt))
+        .thenReturn(Optional.empty());
+
+    // when
+    Optional<ModelPricingResult> result =
+        modelPricingService.findEffectivePricing("claude-sonnet-4-6", queryAt);
+
+    // then
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void 모델명이_빈_문자열이면_유효_단가_조회_시_예외를_던진다() {
+    assertThatThrownBy(
+            () ->
+                modelPricingService.findEffectivePricing("", Instant.parse("2026-01-01T00:00:00Z")))
         .isInstanceOf(BusinessException.class);
   }
 }
