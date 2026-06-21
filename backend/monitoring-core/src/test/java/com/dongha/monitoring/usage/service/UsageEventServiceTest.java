@@ -3,6 +3,7 @@ package com.dongha.monitoring.usage.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -117,6 +118,32 @@ class UsageEventServiceTest {
     assertThat(response.accepted()).isEqualTo(0);
     assertThat(response.duplicated()).isEqualTo(0);
     assertThat(response.results()).isEmpty();
+  }
+
+  @Test
+  void backfillMissingPromptSummaries_nullPromptSummaryを持つイベントが埋められる() {
+    // given — rawPayload exists but contains no promptSummary key → getPromptSummary() returns null
+    UsageEvent eventWithoutSummary =
+        UsageEvent.create(PROJECT_ID, "key-bf-1", "claude-sonnet-4-5", 10, 5, Instant.now(), "{}");
+    // rawPayload has valid promptSummary → getPromptSummary() returns non-null → skip
+    UsageEvent eventWithSummary =
+        UsageEvent.create(
+            PROJECT_ID,
+            "key-bf-2",
+            "claude-sonnet-4-5",
+            10,
+            5,
+            Instant.now(),
+            "{\"promptSummary\":\"hello\"}");
+    when(usageEventRepository.findByRawPayloadIsNotNull())
+        .thenReturn(List.of(eventWithoutSummary, eventWithSummary));
+
+    // when
+    int count = usageEventService.backfillMissingPromptSummaries();
+
+    // then — only the event without a parseable promptSummary is counted and saved
+    assertThat(count).isEqualTo(1);
+    verify(usageEventRepository).saveAll(anyList());
   }
 
   @Test

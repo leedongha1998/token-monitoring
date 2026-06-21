@@ -15,6 +15,8 @@ public interface UsageEventRepository extends JpaRepository<UsageEvent, Long> {
 
   Optional<UsageEvent> findByIdempotencyKey(String idempotencyKey);
 
+  List<UsageEvent> findByRawPayloadIsNotNull();
+
   @Query("SELECT MIN(u.occurredAt) FROM UsageEvent u")
   Optional<Instant> findEarliestOccurredAt();
 

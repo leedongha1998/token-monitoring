@@ -93,6 +93,21 @@ public class UsageEventService {
         result.getNumber());
   }
 
+  @Transactional
+  public int backfillMissingPromptSummaries() {
+    List<UsageEvent> events = usageEventRepository.findByRawPayloadIsNotNull();
+    List<UsageEvent> toUpdate = new ArrayList<>();
+    for (UsageEvent event : events) {
+      if (event.getPromptSummary() == null) {
+        toUpdate.add(event);
+      }
+    }
+    if (!toUpdate.isEmpty()) {
+      usageEventRepository.saveAll(toUpdate);
+    }
+    return toUpdate.size();
+  }
+
   private static String buildRawPayload(String promptSummary) {
     if (promptSummary == null || promptSummary.isBlank()) return null;
     String summary = promptSummary.trim();
