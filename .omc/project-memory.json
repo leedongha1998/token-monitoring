@@ -1,0 +1,404 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1782016874214,
+  "projectRoot": "C:\\Workspace\\token-monitoring",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cd /c/Workspace/token-monitoring/frontend && npm run build 2>&1 | tail -20",
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1782016874085,
+      "keyFiles": [
+        "build.gradle.kts",
+        "docker-compose.yml",
+        "Dockerfile",
+        "gradlew",
+        "gradlew.bat"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 0,
+      "lastAccessed": 1782016874087,
+      "keyFiles": []
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 8,
+      "lastAccessed": 1782016874089,
+      "keyFiles": [
+        "index.html",
+        "package-lock.json",
+        "package.json",
+        "tsconfig.app.json",
+        "tsconfig.json"
+      ]
+    },
+    "backend\\build": {
+      "path": "backend\\build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1782016874096,
+      "keyFiles": []
+    },
+    "frontend\\dist": {
+      "path": "frontend\\dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 1,
+      "lastAccessed": 1782016874101,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "frontend\\node_modules": {
+      "path": "frontend\\node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 1,
+      "lastAccessed": 1782016874109,
+      "keyFiles": []
+    },
+    "frontend\\src": {
+      "path": "frontend\\src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1782016874111,
+      "keyFiles": [
+        "App.tsx",
+        "main.tsx"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "backend",
+      "accessCount": 31,
+      "lastAccessed": 1782024320697,
+      "type": "directory"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\test\\java\\com\\dongha\\monitoring\\ArchitectureTest.java",
+      "accessCount": 18,
+      "lastAccessed": 1781611768230,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\common\\filter\\ApiKeyAuthenticationFilter.java",
+      "accessCount": 15,
+      "lastAccessed": 1781611250870,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\MonitoringApiApplication.java",
+      "accessCount": 15,
+      "lastAccessed": 1782024482434,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\domain\\ApiKey.java",
+      "accessCount": 14,
+      "lastAccessed": 1781609129550,
+      "type": "file"
+    },
+    {
+      "path": "progress.txt",
+      "accessCount": 13,
+      "lastAccessed": 1781526187667,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\service\\ApiKeyService.java",
+      "accessCount": 13,
+      "lastAccessed": 1781609453162,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\test\\java\\com\\dongha\\monitoring\\common\\filter\\ApiKeyAuthenticationFilterTest.java",
+      "accessCount": 12,
+      "lastAccessed": 1781366906035,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\resources\\application.yml",
+      "accessCount": 12,
+      "lastAccessed": 1782023432231,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 10,
+      "lastAccessed": 1782024312099,
+      "type": "directory"
+    },
+    {
+      "path": ".claude\\settings.json",
+      "accessCount": 8,
+      "lastAccessed": 1781263526575,
+      "type": "file"
+    },
+    {
+      "path": "backend\\settings.gradle.kts",
+      "accessCount": 8,
+      "lastAccessed": 1781393583646,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\project\\controller\\ApiKeyController.java",
+      "accessCount": 8,
+      "lastAccessed": 1781609456128,
+      "type": "file"
+    },
+    {
+      "path": "backend\\docker-compose.yml",
+      "accessCount": 7,
+      "lastAccessed": 1781525502169,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-batch\\src\\main\\java\\com\\dongha\\monitoring\\MonitoringBatchApplication.java",
+      "accessCount": 7,
+      "lastAccessed": 1781608033269,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\project\\controller\\ProjectController.java",
+      "accessCount": 7,
+      "lastAccessed": 1781609357530,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\MonitoringCoreApplication.java",
+      "accessCount": 7,
+      "lastAccessed": 1782023317938,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\hooks\\check_git_commands.py",
+      "accessCount": 6,
+      "lastAccessed": 1781263312046,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\hooks\\check_forbidden_paths.py",
+      "accessCount": 6,
+      "lastAccessed": 1781263312450,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\common\\exception\\GlobalExceptionHandler.java",
+      "accessCount": 6,
+      "lastAccessed": 1781319996074,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\common\\exception\\ErrorCode.java",
+      "accessCount": 6,
+      "lastAccessed": 1781367027674,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\repository\\ApiKeyRepository.java",
+      "accessCount": 6,
+      "lastAccessed": 1781609437229,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\service\\ProjectService.java",
+      "accessCount": 6,
+      "lastAccessed": 1781784274248,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\resources\\db\\migration\\V1__create_project_and_api_key.sql",
+      "accessCount": 5,
+      "lastAccessed": 1781523974272,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\repository\\ProjectRepository.java",
+      "accessCount": 5,
+      "lastAccessed": 1781784267652,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\common\\exception\\ErrorResponse.java",
+      "accessCount": 4,
+      "lastAccessed": 1781280567260,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\test\\java\\com\\dongha\\monitoring\\project\\service\\ApiKeyServiceTest.java",
+      "accessCount": 4,
+      "lastAccessed": 1781320330222,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\domain\\Project.java",
+      "accessCount": 4,
+      "lastAccessed": 1781394460086,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\project\\controller\\ProjectRequest.java",
+      "accessCount": 3,
+      "lastAccessed": 1781279883177,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\common\\exception\\BusinessException.java",
+      "accessCount": 3,
+      "lastAccessed": 1781320156964,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\project\\controller\\ApiKeyIssueResponse.java",
+      "accessCount": 3,
+      "lastAccessed": 1781609099161,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\test\\java\\com\\dongha\\monitoring\\project\\domain\\ApiKeyTest.java",
+      "accessCount": 2,
+      "lastAccessed": 1781262000321,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\hooks\\check_git_commands.js",
+      "accessCount": 2,
+      "lastAccessed": 1781280182378,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\service\\ProjectResult.java",
+      "accessCount": 2,
+      "lastAccessed": 1781367392464,
+      "type": "file"
+    },
+    {
+      "path": ".claude\\hooks\\check_forbidden_paths.js",
+      "accessCount": 2,
+      "lastAccessed": 1781393637914,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\05-api-design.md",
+      "accessCount": 2,
+      "lastAccessed": 1781526189194,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\main\\java\\com\\dongha\\monitoring\\project\\controller\\ProjectResponse.java",
+      "accessCount": 2,
+      "lastAccessed": 1781609096678,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\project\\service\\ApiKeyResult.java",
+      "accessCount": 2,
+      "lastAccessed": 1781609292731,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\repository\\TestRepository.java",
+      "accessCount": 1,
+      "lastAccessed": 1781180427144,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\controller\\TestController.java",
+      "accessCount": 1,
+      "lastAccessed": 1781180428666,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\main\\java\\com\\dongha\\monitoring\\BadFormat.java",
+      "accessCount": 1,
+      "lastAccessed": 1781180429859,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\02-coding-convention.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260254390,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\01-architecture.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260254469,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\03-git-convention.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260254690,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\04-testing.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260255089,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\08-definition-of-done.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260258829,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260259234,
+      "type": "file"
+    },
+    {
+      "path": "docs\\rules\\09-frontend.md",
+      "accessCount": 1,
+      "lastAccessed": 1781260357289,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-core\\src\\test\\java\\com\\dongha\\monitoring\\project\\domain\\ProjectTest.java",
+      "accessCount": 1,
+      "lastAccessed": 1781261566492,
+      "type": "file"
+    },
+    {
+      "path": "backend\\monitoring-api\\src\\test\\java\\com\\dongha\\monitoring\\project\\service\\ApiKeyServiceTest.java",
+      "accessCount": 1,
+      "lastAccessed": 1781261580324,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

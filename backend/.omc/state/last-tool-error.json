@@ -1,0 +1,7 @@
+{
+  "tool_name": "PowerShell",
+  "tool_input_preview": "{\"command\":\"cd C:\\\\Workspace\\\\token-monitoring\\\\backend; .\\\\gradlew.bat spotlessCheck build 2>&1 | Select-String -Pattern \\\"BUILD|FAIL|tests completed\\\" | Select-Object -First 20\",\"timeout\":300000,\"de...",
+  "error": "Exit code 1\n> Task :monitoring-api:spotlessJavaCheck FAILED\r\nFAILURE: Build failed with an exception.\r\nExecution failed for task ':monitoring-api:spotlessJavaCheck'.\r\nBUILD FAILED in 3s",
+  "timestamp": "2026-06-18T12:08:48.577Z",
+  "retry_count": 2
+}

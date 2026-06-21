@@ -1,0 +1,7 @@
+{
+  "tool_name": "Agent",
+  "tool_input_preview": "{\"description\":\"Ralph Step 7 - Architect verification of 5 dashboard improvements\",\"prompt\":\"ARCHITECT VERIFICATION - Ralph Step 7\\n\\nReview the following 5 completed user stories against their SPECIF...",
+  "error": "Agent type 'architect' not found. Available agents: claude, claude-code-guide, Explore, general-purpose, Plan, statusline-setup",
+  "timestamp": "2026-06-21T07:11:39.204Z",
+  "retry_count": 1
+}

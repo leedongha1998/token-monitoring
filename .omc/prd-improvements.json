@@ -1,0 +1,86 @@
+{
+  "version": "1.0",
+  "task": "대시보드 UI/백엔드 개선 - 실시간 데이터, promptSummary 백필, 프로젝트 선택, 모델 필터링, 가격 테이블 검증",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "실시간 오늘의 토큰 데이터 새로고침",
+      "priority": "HIGH",
+      "passes": true,
+      "commit": "f8cfb05",
+      "acceptanceCriteria": [
+        "frontend/src/components/DailyTokenChart.tsx에 자동 새로고침 타이머 추가 (기본 30초 간격)",
+        "useEffect hook으로 setInterval 설정, cleanup에서 clearInterval 호출",
+        "API 호출 시 오늘 날짜 기준으로 /v1/stats/daily 재요청",
+        "차트 데이터가 실시간으로 업데이트되는 것을 확인 (개발자 도구 Network탭에서 폴링 확인)",
+        "./gradlew :monitoring-api:test 통과",
+        "./gradlew spotlessCheck build 통과"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "promptSummary 데이터 완전 백필",
+      "priority": "HIGH",
+      "passes": true,
+      "commit": "67aa2f8",
+      "acceptanceCriteria": [
+        "backend/monitoring-core/src/main/java/com/dongha/monitoring/usage/repository/UsageEventRepository.java에 쿼리 메서드 추가: findByRawPayloadNotNull()",
+        "backend/monitoring-core/src/main/java/com/dongha/monitoring/usage/service/UsageEventService.java에 @Service 메서드 추가: backfillMissingPromptSummaries()",
+        "로직: raw_payload가 null이 아닌 모든 이벤트를 조회하여 promptSummary가 null인 것만 fillRawPayload() 호출",
+        "backend/monitoring-api/src/main/java/com/dongha/monitoring/common/RollupScheduler.java의 rollupMissingOnStartup() 메서드에서 backfillMissingPromptSummaries() 호출 추가",
+        "테스트: DailyRollupServiceTest.java에 테스트 케이스 추가 - null promptSummary를 가진 이벤트가 백필 후 채워지는지 검증",
+        "./gradlew :monitoring-api:test 통과",
+        "./gradlew spotlessCheck build 통과"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "UI 프로젝트 드롭다운 선택자 추가",
+      "priority": "MEDIUM",
+      "passes": true,
+      "commit": "ac40831",
+      "acceptanceCriteria": [
+        "frontend/src/components/ProjectSelector.tsx 신규 컴포넌트 생성",
+        "GET /v1/projects (페이징 조회) API 호출하여 프로젝트 목록 조회",
+        "Select 컴포넌트로 프로젝트 선택 UI 구성",
+        "선택된 projectId를 상위 컴포넌트에 전달 (props callback)",
+        "Dashboard.tsx 또는 App.tsx에 ProjectSelector 통합",
+        "DailyTokenChart, EventList 등이 선택된 projectId로 필터링되도록 수정",
+        "프론트엔드 빌드 성공: npm run build",
+        "브라우저에서 프로젝트 드롭다운이 보이고 선택 가능함을 확인"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "대시보드에서 <synthetic> 모델 필터링",
+      "priority": "MEDIUM",
+      "passes": true,
+      "commit": "4171816",
+      "acceptanceCriteria": [
+        "backend/monitoring-core/src/main/java/com/dongha/monitoring/usage/repository/UsageEventRepository.java에 쿼리 메서드 추가: findExcludingSyntheticModel(projectId, from, to)",
+        "쿼리: model != '<synthetic>'인 이벤트만 조회",
+        "backend/monitoring-api/src/main/java/com/dongha/monitoring/usage/controller/UsageController.java의 GET /v1/stats/daily 엔드포인트에서 synthetic 모델 필터링 로직 적용",
+        "테스트: DailyRollupRepositoryTest.java에 테스트 케이스 추가 - synthetic 모델이 통계에서 제외되는지 검증",
+        "UI 차트와 EventList에서 synthetic 항목이 사라진 것을 확인",
+        "./gradlew :monitoring-api:test 통과",
+        "./gradlew spotlessCheck build 통과"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "ModelPricing 테이블 검증 및 업데이트",
+      "priority": "LOW",
+      "passes": true,
+      "commit": "2de9fe6",
+      "acceptanceCriteria": [
+        "backend/monitoring-core/src/main/java/com/dongha/monitoring/pricing/domain/ModelPricing.java 엔티티 검토: effective_from, input_price, output_price 필드 확인",
+        "backend/monitoring-core/src/test/java/com/dongha/monitoring/pricing/.../PricingRepositoryTest.java에 통합 테스트 추가",
+        "테스트: effective_from 기준으로 올바른 가격이 조회되는지 검증",
+        "Flyway 마이그레이션 확인: V{n}__model_pricing.sql이 존재하고 현재 모델들(claude-opus-4-8, claude-sonnet-4-6, claude-haiku-4-5 등) 가격 데이터 포함",
+        "가격 테이블이 최신 모델을 반영하고 있는지 확인",
+        "테스트 통과: ./gradlew :monitoring-core:test",
+        "./gradlew spotlessCheck build 통과"
+      ]
+    }
+  ]
+}

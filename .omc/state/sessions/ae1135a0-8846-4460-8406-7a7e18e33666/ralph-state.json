@@ -1,0 +1,13 @@
+{
+  "active": true,
+  "iteration": 1,
+  "max_iterations": 100,
+  "started_at": "2026-06-21T05:45:42.902Z",
+  "prompt": "/oh-my-claudecode:ralph 1번부터 5번까지 작업 진행",
+  "session_id": "ae1135a0-8846-4460-8406-7a7e18e33666",
+  "project_path": "C:\\Workspace\\token-monitoring",
+  "linked_ultrawork": true,
+  "awaiting_confirmation": true,
+  "awaiting_confirmation_set_at": "2026-06-21T05:45:42.902Z",
+  "last_checked_at": "2026-06-21T05:45:42.902Z"
+}

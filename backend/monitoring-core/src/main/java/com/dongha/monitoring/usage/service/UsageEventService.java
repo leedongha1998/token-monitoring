@@ -99,6 +99,7 @@ public class UsageEventService {
     List<UsageEvent> toUpdate = new ArrayList<>();
     for (UsageEvent event : events) {
       if (event.getPromptSummary() == null) {
+        event.fillRawPayload();
         toUpdate.add(event);
       }
     }

@@ -1,51 +1,39 @@
 {
   "version": "1.0",
-  "task": "monitoring-client: Spring Boot Starter 구현 (자동 설정, UsageEvent 전송 SDK)",
+  "task": "통합 테스트: Testcontainers PostgreSQL + 핵심 ingestion 시나리오",
   "stories": [
     {
       "id": "US-001",
-      "title": "Gradle 모듈 등록",
+      "title": "Testcontainers 의존성 추가 + AbstractIntegrationTest 기반 클래스",
       "passes": true,
       "acceptanceCriteria": [
-        "backend/settings.gradle.kts에 'monitoring-client' include 추가",
-        "backend/monitoring-client/build.gradle.kts 작성 (spring-boot-starter, testImplementation spring-boot-starter-test)",
-        "./gradlew :monitoring-client:compileJava 성공"
+        "monitoring-api/build.gradle.kts에 testImplementation org.testcontainers:postgresql, junit-jupiter 추가 ✓",
+        "AbstractIntegrationTest.java가 com.dongha.monitoring 패키지에 존재 ✓",
+        "정적 PostgreSQLContainer 필드 + static 초기화 블록으로 싱글톤 컨테이너 시작 ✓",
+        "@DynamicPropertySource로 spring.datasource.url/username/password 오버라이드 ✓",
+        "@SpringBootTest(webEnvironment = RANDOM_PORT) 어노테이션 적용 ✓",
+        "@MockBean RollupScheduler로 스케줄러 간섭 차단 ✓"
       ]
     },
     {
       "id": "US-002",
-      "title": "MonitoringClientProperties 구현",
+      "title": "이벤트 수집 → 롤업 → Stats 조회 통합 테스트",
       "passes": true,
       "acceptanceCriteria": [
-        "com.dongha.monitoring.client.MonitoringClientProperties 클래스 존재",
-        "@ConfigurationProperties(prefix = 'monitoring.client') 적용",
-        "필드: apiKey(String), serverUrl(String, 기본 http://localhost:8080), enabled(boolean, 기본 true), connectTimeoutMs(int, 기본 3000), readTimeoutMs(int, 기본 5000)",
-        "MonitoringClientPropertiesTest: 기본값 검증 테스트 존재"
+        "IngestionIntegrationTest.java가 com.dongha.monitoring 패키지에 존재 ✓",
+        "테스트: 이벤트_수집_후_롤업하면_일별_통계에서_조회된다 — POST /v1/events → 202, rollup 후 GET /v1/stats/daily 응답에 모델명 포함 ✓",
+        "@BeforeEach에서 HTTP API로 Project+ApiKey를 생성 ✓",
+        "X-API-Key 헤더에 발급된 plainKey를 담아 실제 인증 필터 통과 ✓"
       ]
     },
     {
       "id": "US-003",
-      "title": "MonitoringClientService 구현",
+      "title": "멱등성 통합 테스트 (idempotencyKey 중복)",
       "passes": true,
       "acceptanceCriteria": [
-        "com.dongha.monitoring.client.MonitoringClientService 클래스 존재",
-        "sendEvent(String model, int inputTokens, int outputTokens, String idempotencyKey) 메서드 — POST {serverUrl}/v1/events 호출",
-        "X-API-Key 헤더에 apiKey 설정, Content-Type: application/json",
-        "enabled=false이면 즉시 반환 (HTTP 호출 없음)",
-        "HTTP 오류 또는 예외는 log.warn()으로만 처리, 클라이언트 앱에 예외 전파 금지",
-        "MonitoringClientServiceTest: enabled=false no-op, enabled=true 성공(202), HTTP 오류 흡수 테스트 존재"
-      ]
-    },
-    {
-      "id": "US-004",
-      "title": "Auto-configuration 등록",
-      "passes": true,
-      "acceptanceCriteria": [
-        "com.dongha.monitoring.client.MonitoringClientAutoConfiguration 클래스 존재",
-        "@EnableConfigurationProperties(MonitoringClientProperties.class) 적용",
-        "MonitoringClientService 빈 등록",
-        "META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports 파일에 AutoConfiguration 클래스 등록",
-        "./gradlew build BUILD SUCCESSFUL (spotlessCheck 포함)"
+        "테스트: 동일한_idempotencyKey로_재요청하면_이벤트가_중복_처리되지_않는다 — 동일 키로 두 번 POST 시 첫 번째 202, 두 번째 200 ✓",
+        "./gradlew :monitoring-api:test 성공 (전체 테스트 포함) ✓",
+        "./gradlew spotlessCheck build 성공 ✓"
       ]
     }
   ]
