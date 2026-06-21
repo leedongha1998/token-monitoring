@@ -18,6 +18,20 @@ public interface DailyRollupRepository extends JpaRepository<DailyRollup, Long> 
 
   List<DailyRollup> findByDateBetween(LocalDate from, LocalDate to);
 
+  @Query(
+      "SELECT d FROM DailyRollup d"
+          + " WHERE d.projectId = :projectId AND d.date BETWEEN :from AND :to"
+          + " AND d.model <> '<synthetic>'")
+  List<DailyRollup> findByProjectIdAndDateBetweenExcludingSyntheticModel(
+      @Param("projectId") Long projectId, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+  @Query(
+      "SELECT d FROM DailyRollup d"
+          + " WHERE d.date BETWEEN :from AND :to"
+          + " AND d.model <> '<synthetic>'")
+  List<DailyRollup> findByDateBetweenExcludingSyntheticModel(
+      @Param("from") LocalDate from, @Param("to") LocalDate to);
+
   @Modifying
   @Query("DELETE FROM DailyRollup d WHERE d.projectId = :projectId AND d.date = :date")
   void deleteByProjectIdAndDate(@Param("projectId") Long projectId, @Param("date") LocalDate date);
