@@ -16,6 +16,17 @@ const PAD_RIGHT = 16;
 const PAD_TOP = 16;
 const PAD_BOTTOM = 40;
 
+const AUTO_REFRESH_INTERVAL_MS = 30_000;
+
+function getTodayDateString(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isToday(from: string, to: string): boolean {
+  const today = getTodayDateString();
+  return from === today && to === today;
+}
+
 export function DailyChart({ from, to, model, projectId }: Props) {
   const [rows, setRows] = useState<DailyStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +41,20 @@ export function DailyChart({ from, to, model, projectId }: Props) {
         setError(e instanceof Error ? e.message : "알 수 없는 오류"),
       )
       .finally(() => setLoading(false));
+  }, [from, to, model, projectId]);
+
+  useEffect(() => {
+    if (!isToday(from, to)) return;
+
+    const intervalId = setInterval(() => {
+      fetchDailyStats({ from, to, model, projectId })
+        .then(setRows)
+        .catch(() => {
+          // 자동 새로고침 실패는 조용히 무시 — 다음 주기에 재시도
+        });
+    }, AUTO_REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
   }, [from, to, model, projectId]);
 
   if (loading) return <p>차트 로딩 중...</p>;
