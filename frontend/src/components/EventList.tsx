@@ -22,10 +22,13 @@ function localDateToInstantEnd(dateStr: string): string {
   return d.toISOString();
 }
 
-export function EventList() {
+interface Props {
+  projectId?: number;
+}
+
+export function EventList({ projectId }: Props) {
   const [from, setFrom] = useState(sevenDaysAgoIso());
   const [to, setTo] = useState(todayIso());
-  const [projectId, setProjectId] = useState("");
   const [page, setPage] = useState(0);
 
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -37,12 +40,16 @@ export function EventList() {
   const SIZE = 50;
 
   useEffect(() => {
+    setPage(0);
+  }, [projectId]);
+
+  useEffect(() => {
     setLoading(true);
     setError(null);
     fetchEvents({
       from: localDateToInstantStart(from),
       to: localDateToInstantEnd(to),
-      projectId: projectId ? Number(projectId) : undefined,
+      projectId,
       page,
       size: SIZE,
     })
@@ -78,16 +85,6 @@ export function EventList() {
             value={to}
             onChange={(e) => setTo(e.target.value)}
             style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14 }}
-          />
-        </label>
-        <label style={{ fontSize: 14 }}>
-          프로젝트 ID
-          <input
-            type="number"
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            placeholder="전체"
-            style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14, width: 80 }}
           />
         </label>
         <button
@@ -127,7 +124,7 @@ export function EventList() {
                   </td>
                 </tr>
               )}
-              {events.map((ev) => (
+              {events.filter((ev) => ev.model !== "<synthetic>").map((ev) => (
                 <tr key={ev.id} style={{ borderBottom: "1px solid #eee" }}>
                   <td style={{ padding: "7px 12px" }}>
                     {new Date(ev.occurredAt).toLocaleString("ko-KR")}

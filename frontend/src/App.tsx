@@ -3,6 +3,7 @@ import { DailyChart } from "./components/DailyChart";
 import { DailyStatsTable } from "./components/DailyStatsTable";
 import { EventList } from "./components/EventList";
 import { ProjectManagement } from "./components/ProjectManagement";
+import { ProjectSelector } from "./components/ProjectSelector";
 import { SummaryCard } from "./components/SummaryCard";
 
 type Tab = "dashboard" | "projects" | "events";
@@ -28,7 +29,7 @@ export default function App() {
   const [from, setFrom] = useState(thirtyDaysAgoStr());
   const [to, setTo] = useState(todayStr());
   const [model, setModel] = useState("");
-  const [projectId, setProjectId] = useState("");
+  const [selectedProjectId, setSelectedProjectId] = useState<number | undefined>(undefined);
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px", fontFamily: "sans-serif" }}>
@@ -97,16 +98,10 @@ export default function App() {
                 style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14, width: 200 }}
               />
             </label>
-            <label style={{ fontSize: 14 }}>
-              프로젝트 ID
-              <input
-                type="number"
-                value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                placeholder="전체"
-                style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14, width: 80 }}
-              />
-            </label>
+            <ProjectSelector
+              selectedProjectId={selectedProjectId}
+              onProjectChange={setSelectedProjectId}
+            />
           </div>
 
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>요약</h2>
@@ -117,7 +112,7 @@ export default function App() {
             from={from}
             to={to}
             model={model || undefined}
-            projectId={projectId ? Number(projectId) : undefined}
+            projectId={selectedProjectId}
           />
 
           <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>일별 통계</h2>
@@ -125,14 +120,14 @@ export default function App() {
             from={from}
             to={to}
             model={model || undefined}
-            projectId={projectId ? Number(projectId) : undefined}
+            projectId={selectedProjectId}
           />
         </>
       )}
 
       {tab === "projects" && <ProjectManagement />}
 
-      {tab === "events" && <EventList />}
+      {tab === "events" && <EventList projectId={selectedProjectId} />}
     </div>
   );
 }
