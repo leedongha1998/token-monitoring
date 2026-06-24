@@ -2,6 +2,7 @@ package com.dongha.monitoring.batch;
 
 import com.dongha.monitoring.alert.domain.AlertType;
 import com.dongha.monitoring.alert.service.AlertService;
+import com.dongha.monitoring.project.domain.ProjectBudget;
 import com.dongha.monitoring.project.repository.ProjectBudgetQueryPort;
 import com.dongha.monitoring.rollup.domain.DailyRollup;
 import com.dongha.monitoring.rollup.repository.DailyRollupQueryPort;
@@ -107,7 +108,7 @@ public class AlertDetectionBatch {
 
   private void detectBudgetBurnRate(Long projectId, LocalDate date) {
     YearMonth yearMonth = YearMonth.from(date);
-    Optional<com.dongha.monitoring.project.domain.ProjectBudget> budgetOpt =
+    Optional<ProjectBudget> budgetOpt =
         projectBudgetQueryPort.findByProjectIdAndYearMonth(projectId, yearMonth.toString());
     if (budgetOpt.isEmpty()) return;
 
@@ -122,7 +123,6 @@ public class AlertDetectionBatch {
 
     int dayOfMonth = date.getDayOfMonth();
     int daysInMonth = yearMonth.lengthOfMonth();
-    if (dayOfMonth == 0) return;
 
     BigDecimal projectedTotal =
         usedSoFar

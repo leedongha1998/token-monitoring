@@ -207,6 +207,9 @@ export default function App() {
               <h2 className="text-base font-semibold mb-3 mt-6">세션별 토큰 효율</h2>
               <SessionEfficiencyChart data={sessionData} />
               <ModelCostTable data={sessionData} />
+
+              <h2 className="text-base font-semibold mb-3 mt-6">모델 전환 절감 제안</h2>
+              <AdvisorCard projectId={selectedProjectId} />
             </>
           )}
         </>
@@ -216,13 +219,6 @@ export default function App() {
         <>
           <h2 className="text-base font-semibold mb-3">모델별 비용 비중</h2>
           <ModelPieChart from={from} to={to} projectId={selectedProjectId} />
-
-          {selectedProjectId != null && (
-            <>
-              <h2 className="text-base font-semibold mb-3 mt-6">모델 전환 절감 제안</h2>
-              <AdvisorCard projectId={selectedProjectId} />
-            </>
-          )}
         </>
       )}
 
