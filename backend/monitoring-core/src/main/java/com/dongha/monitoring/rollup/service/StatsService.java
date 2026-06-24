@@ -38,7 +38,8 @@ public class StatsService {
 
   private List<DailyRollup> fetchRollups(Long projectId, LocalDate from, LocalDate to) {
     return projectId != null
-        ? dailyRollupRepository.findByProjectIdAndDateBetween(projectId, from, to)
-        : dailyRollupRepository.findByDateBetween(from, to);
+        ? dailyRollupRepository.findByProjectIdAndDateBetweenExcludingSyntheticModel(
+            projectId, from, to)
+        : dailyRollupRepository.findByDateBetweenExcludingSyntheticModel(from, to);
   }
 }

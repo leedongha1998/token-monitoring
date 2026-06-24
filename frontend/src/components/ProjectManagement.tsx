@@ -7,6 +7,13 @@ import {
   issueApiKey,
   deactivateApiKey,
 } from "../api/projects";
+import { fetchBudget, setBudget } from "../api/budget";
+import type { BudgetInfo } from "../api/budget";
+
+function currentYearMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 export function ProjectManagement() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -21,6 +28,10 @@ export function ProjectManagement() {
   const [apiKeys, setApiKeys] = useState<Record<number, ApiKey[]>>({});
   const [issuedKey, setIssuedKey] = useState<IssuedKey | null>(null);
   const [issuedForProject, setIssuedForProject] = useState<number | null>(null);
+
+  const [budgets, setBudgets] = useState<Record<number, BudgetInfo | null>>({});
+  const [budgetForm, setBudgetForm] = useState<Record<number, { yearMonth: string; amount: string }>>({});
+  const [budgetSaving, setBudgetSaving] = useState<Record<number, boolean>>({});
 
   const loadProjects = useCallback(async () => {
     try {
@@ -67,6 +78,20 @@ export function ProjectManagement() {
         setError(String(e));
       }
     }
+    const ym = currentYearMonth();
+    try {
+      const budget = await fetchBudget(projectId, ym);
+      setBudgets((prev) => ({ ...prev, [projectId]: budget }));
+      setBudgetForm((prev) => ({
+        ...prev,
+        [projectId]: {
+          yearMonth: ym,
+          amount: budget ? String(budget.monthlyBudgetUsd) : "",
+        },
+      }));
+    } catch {
+      setBudgets((prev) => ({ ...prev, [projectId]: null }));
+    }
   };
 
   const handleIssueKey = async (projectId: number) => {
@@ -91,56 +116,48 @@ export function ProjectManagement() {
     }
   };
 
-  if (loading) return <div style={{ padding: 16, color: "#666" }}>로딩 중...</div>;
+  const handleSetBudget = async (projectId: number) => {
+    const form = budgetForm[projectId];
+    if (!form?.yearMonth || !form?.amount) return;
+    const amount = parseFloat(form.amount);
+    if (isNaN(amount) || amount <= 0) return;
+    setBudgetSaving((prev) => ({ ...prev, [projectId]: true }));
+    try {
+      const result = await setBudget(projectId, form.yearMonth, amount);
+      setBudgets((prev) => ({ ...prev, [projectId]: result }));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBudgetSaving((prev) => ({ ...prev, [projectId]: false }));
+    }
+  };
+
+  if (loading) return <div className="p-4 text-gray-500">로딩 중...</div>;
 
   return (
     <div>
       {error && (
-        <div
-          style={{
-            color: "#721c24",
-            marginBottom: 12,
-            padding: "8px 12px",
-            background: "#f8d7da",
-            border: "1px solid #f5c6cb",
-            borderRadius: 4,
-            fontSize: 13,
-          }}
-        >
+        <div className="text-red-700 mb-3 px-3 py-2 bg-red-50 border border-red-200 rounded text-sm">
           오류: {error}
           <button
             onClick={() => setError(null)}
-            style={{ marginLeft: 8, cursor: "pointer", background: "none", border: "none" }}
+            className="ml-2 cursor-pointer bg-transparent border-0 text-red-500"
           >
             ×
           </button>
         </div>
       )}
 
-      <div
-        style={{
-          background: "#f8f9fa",
-          padding: 16,
-          borderRadius: 8,
-          marginBottom: 24,
-          border: "1px solid #e9ecef",
-        }}
-      >
-        <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>새 프로젝트 만들기</h3>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+        <h3 className="text-sm font-semibold mb-3">새 프로젝트 만들기</h3>
+        <div className="flex gap-2 flex-wrap">
           <input
             type="text"
             placeholder="프로젝트 이름 *"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            style={{
-              padding: "6px 10px",
-              fontSize: 14,
-              border: "1px solid #ddd",
-              borderRadius: 4,
-              width: 200,
-            }}
+            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded w-48"
           />
           <input
             type="text"
@@ -148,27 +165,12 @@ export function ProjectManagement() {
             value={newDesc}
             onChange={(e) => setNewDesc(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-            style={{
-              padding: "6px 10px",
-              fontSize: 14,
-              border: "1px solid #ddd",
-              borderRadius: 4,
-              width: 260,
-            }}
+            className="px-2.5 py-1.5 text-sm border border-gray-300 rounded w-64"
           />
           <button
             onClick={handleCreate}
             disabled={creating || !newName.trim()}
-            style={{
-              padding: "6px 18px",
-              fontSize: 14,
-              background: "#0066cc",
-              color: "#fff",
-              border: "none",
-              borderRadius: 4,
-              cursor: creating || !newName.trim() ? "not-allowed" : "pointer",
-              opacity: creating || !newName.trim() ? 0.6 : 1,
-            }}
+            className="px-4 py-1.5 text-sm bg-blue-600 text-white border-0 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700"
           >
             {creating ? "생성 중..." : "생성"}
           </button>
@@ -176,119 +178,58 @@ export function ProjectManagement() {
       </div>
 
       {projects.length === 0 ? (
-        <div style={{ color: "#666", fontSize: 14 }}>
+        <div className="text-gray-500 text-sm">
           프로젝트가 없습니다. 위에서 첫 번째 프로젝트를 만들어보세요.
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {projects.map((project) => (
             <div
               key={project.id}
-              style={{ border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" }}
+              className="border border-gray-200 rounded-lg overflow-hidden"
             >
-              <div
-                style={{
-                  padding: "12px 16px",
-                  background: "#fff",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15 }}>{project.name}</div>
+              <div className="px-4 py-3 bg-white flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-semibold text-sm">{project.name}</div>
                   {project.description && (
-                    <div style={{ fontSize: 13, color: "#666", marginTop: 2 }}>
-                      {project.description}
-                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{project.description}</div>
                   )}
                   <div
-                    style={{
-                      fontSize: 12,
-                      color: project.active ? "#28a745" : "#dc3545",
-                      marginTop: 4,
-                    }}
+                    className={`text-xs mt-1 ${project.active ? "text-green-600" : "text-red-500"}`}
                   >
                     {project.active ? "활성" : "비활성"} · ID: {project.id}
                   </div>
                 </div>
                 <button
                   onClick={() => handleToggle(project.id)}
-                  style={{
-                    padding: "5px 14px",
-                    fontSize: 13,
-                    background: expandedProjectId === project.id ? "#e9ecef" : "#fff",
-                    border: "1px solid #ddd",
-                    borderRadius: 4,
-                    cursor: "pointer",
-                  }}
+                  className={`px-3 py-1.5 text-xs border border-gray-300 rounded cursor-pointer hover:bg-gray-50 ${
+                    expandedProjectId === project.id ? "bg-gray-100" : "bg-white"
+                  }`}
                 >
-                  {expandedProjectId === project.id ? "닫기" : "API 키 관리"}
+                  {expandedProjectId === project.id ? "닫기" : "API 키 / 예산 관리"}
                 </button>
               </div>
 
               {expandedProjectId === project.id && (
-                <div
-                  style={{
-                    padding: "14px 16px",
-                    background: "#fafafa",
-                    borderTop: "1px solid #e0e0e0",
-                  }}
-                >
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
                   {issuedForProject === project.id && issuedKey && (
-                    <div
-                      style={{
-                        marginBottom: 14,
-                        padding: "10px 14px",
-                        background: "#fff3cd",
-                        border: "1px solid #ffc107",
-                        borderRadius: 6,
-                      }}
-                    >
-                      <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6 }}>
+                    <div className="mb-3 p-3 bg-yellow-50 border border-yellow-300 rounded">
+                      <div className="text-xs font-semibold mb-1.5">
                         발급된 API 키 — 이 화면에서만 표시됩니다
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <code
-                          style={{
-                            fontSize: 12,
-                            background: "#fff",
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "1px solid #ddd",
-                            flex: 1,
-                            wordBreak: "break-all",
-                          }}
-                        >
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-white px-2 py-1 rounded border border-gray-200 flex-1 break-all">
                           {issuedKey.plainKey}
                         </code>
                         <button
                           onClick={() => navigator.clipboard.writeText(issuedKey.plainKey)}
-                          style={{
-                            padding: "4px 10px",
-                            fontSize: 12,
-                            border: "1px solid #ddd",
-                            borderRadius: 4,
-                            cursor: "pointer",
-                            background: "#fff",
-                            whiteSpace: "nowrap",
-                          }}
+                          className="px-2 py-1 text-xs border border-gray-300 rounded cursor-pointer bg-white whitespace-nowrap hover:bg-gray-50"
                         >
                           복사
                         </button>
                         <button
-                          onClick={() => {
-                            setIssuedKey(null);
-                            setIssuedForProject(null);
-                          }}
-                          style={{
-                            padding: "4px 8px",
-                            fontSize: 14,
-                            border: "none",
-                            background: "none",
-                            cursor: "pointer",
-                            color: "#666",
-                          }}
+                          onClick={() => { setIssuedKey(null); setIssuedForProject(null); }}
+                          className="text-sm text-gray-400 bg-transparent border-0 cursor-pointer"
                         >
                           ×
                         </button>
@@ -296,57 +237,35 @@ export function ProjectManagement() {
                     </div>
                   )}
 
-                  {!apiKeys[project.id] || apiKeys[project.id].length === 0 ? (
-                    <div style={{ fontSize: 13, color: "#666", marginBottom: 10 }}>
-                      발급된 API 키가 없습니다.
-                    </div>
+                  {(!apiKeys[project.id] || apiKeys[project.id].length === 0) ? (
+                    <div className="text-xs text-gray-500 mb-2">발급된 API 키가 없습니다.</div>
                   ) : (
-                    <table
-                      style={{
-                        width: "100%",
-                        borderCollapse: "collapse",
-                        marginBottom: 12,
-                        fontSize: 13,
-                      }}
-                    >
+                    <table className="w-full border-collapse mb-3 text-xs">
                       <thead>
-                        <tr style={{ textAlign: "left", borderBottom: "1px solid #e0e0e0" }}>
-                          <th style={{ padding: "4px 8px", fontWeight: 600 }}>Prefix</th>
-                          <th style={{ padding: "4px 8px", fontWeight: 600 }}>상태</th>
-                          <th style={{ padding: "4px 8px", fontWeight: 600 }}>발급일</th>
-                          <th style={{ padding: "4px 8px" }}></th>
+                        <tr className="text-left border-b border-gray-200">
+                          <th className="py-1 px-2 font-semibold">Prefix</th>
+                          <th className="py-1 px-2 font-semibold">상태</th>
+                          <th className="py-1 px-2 font-semibold">발급일</th>
+                          <th className="py-1 px-2" />
                         </tr>
                       </thead>
                       <tbody>
                         {apiKeys[project.id].map((key) => (
-                          <tr key={key.id} style={{ borderBottom: "1px solid #f0f0f0" }}>
-                            <td style={{ padding: "6px 8px", fontFamily: "monospace" }}>
-                              {key.prefix}****
-                            </td>
+                          <tr key={key.id} className="border-b border-gray-100">
+                            <td className="py-1.5 px-2 font-mono">{key.prefix}****</td>
                             <td
-                              style={{
-                                padding: "6px 8px",
-                                color: key.active ? "#28a745" : "#999",
-                              }}
+                              className={`py-1.5 px-2 ${key.active ? "text-green-600" : "text-gray-400"}`}
                             >
                               {key.active ? "활성" : "비활성"}
                             </td>
-                            <td style={{ padding: "6px 8px", color: "#666" }}>
+                            <td className="py-1.5 px-2 text-gray-500">
                               {new Date(key.createdAt).toLocaleDateString("ko-KR")}
                             </td>
-                            <td style={{ padding: "6px 8px" }}>
+                            <td className="py-1.5 px-2">
                               {key.active && (
                                 <button
                                   onClick={() => handleDeactivate(project.id, key.id)}
-                                  style={{
-                                    padding: "3px 8px",
-                                    fontSize: 12,
-                                    background: "#fff",
-                                    border: "1px solid #dc3545",
-                                    color: "#dc3545",
-                                    borderRadius: 4,
-                                    cursor: "pointer",
-                                  }}
+                                  className="px-2 py-0.5 text-xs bg-white border border-red-400 text-red-500 rounded cursor-pointer hover:bg-red-50"
                                 >
                                   비활성화
                                 </button>
@@ -360,18 +279,53 @@ export function ProjectManagement() {
 
                   <button
                     onClick={() => handleIssueKey(project.id)}
-                    style={{
-                      padding: "5px 14px",
-                      fontSize: 13,
-                      background: "#28a745",
-                      color: "#fff",
-                      border: "none",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                    }}
+                    className="px-3 py-1.5 text-xs bg-green-600 text-white border-0 rounded cursor-pointer hover:bg-green-700"
                   >
                     + 새 키 발급
                   </button>
+
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    <h4 className="text-xs font-semibold mb-2 text-gray-700">월 예산 설정</h4>
+                    {budgets[project.id] && (
+                      <p className="text-xs text-gray-500 mb-1.5">
+                        현재: {budgets[project.id]!.yearMonth} — ${budgets[project.id]!.monthlyBudgetUsd}
+                      </p>
+                    )}
+                    <div className="flex gap-2 items-center flex-wrap">
+                      <input
+                        type="month"
+                        value={budgetForm[project.id]?.yearMonth ?? currentYearMonth()}
+                        onChange={(e) =>
+                          setBudgetForm((prev) => ({
+                            ...prev,
+                            [project.id]: { ...prev[project.id], yearMonth: e.target.value },
+                          }))
+                        }
+                        className="px-2 py-1 text-xs border border-gray-300 rounded"
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.0001"
+                        placeholder="예산 (USD)"
+                        value={budgetForm[project.id]?.amount ?? ""}
+                        onChange={(e) =>
+                          setBudgetForm((prev) => ({
+                            ...prev,
+                            [project.id]: { ...prev[project.id], amount: e.target.value },
+                          }))
+                        }
+                        className="px-2 py-1 text-xs border border-gray-300 rounded w-28"
+                      />
+                      <button
+                        onClick={() => handleSetBudget(project.id)}
+                        disabled={budgetSaving[project.id]}
+                        className="px-3 py-1 text-xs bg-blue-600 text-white border-0 rounded cursor-pointer hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {budgetSaving[project.id] ? "저장 중..." : "저장"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

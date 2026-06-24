@@ -8,4 +8,5 @@ public record UsageEventRequest(
     int inputTokens,
     int outputTokens,
     Instant occurredAt,
-    String promptSummary) {}
+    String promptSummary,
+    String sessionId) {}

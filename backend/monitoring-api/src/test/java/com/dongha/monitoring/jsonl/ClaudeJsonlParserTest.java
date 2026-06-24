@@ -161,4 +161,40 @@ class ClaudeJsonlParserTest {
     assertThat(entries.get(0).idempotencyKey()).isEqualTo("uuid-1");
     assertThat(entries.get(0).promptSummary()).isEqualTo("코드 리뷰해줘");
   }
+
+  @Test
+  void parseLines_이전_배치의_미연결_프롬프트가_다음_배치_assistant에_연결된다() {
+    // given — 이전 배치에 user가 있었고, 이번 배치는 assistant만 있음
+    String assistantLine =
+        "{\"uuid\":\"uuid-cross\","
+            + "\"type\":\"assistant\","
+            + "\"isSidechain\":false,"
+            + "\"timestamp\":\"2026-06-15T10:00:00Z\","
+            + "\"message\":{"
+            + "\"model\":\"claude-sonnet-4-6\","
+            + "\"usage\":{\"input_tokens\":50,\"output_tokens\":100}}}";
+
+    // when
+    ParseLinesResult result = parser.parseLines(List.of(assistantLine), "이전 배치에서 온 프롬프트");
+
+    // then
+    assertThat(result.entries()).hasSize(1);
+    assertThat(result.entries().get(0).promptSummary()).isEqualTo("이전 배치에서 온 프롬프트");
+    assertThat(result.pendingUserPrompt()).isNull();
+  }
+
+  @Test
+  void parseLines_배치_끝에_미연결_user_프롬프트가_남으면_pendingUserPrompt에_담긴다() {
+    // given — 배치 마지막 줄이 user 메시지 (다음 배치로 이월됨)
+    String userLine =
+        "{\"type\":\"user\","
+            + "\"message\":{\"content\":[{\"type\":\"text\",\"text\":\"이월될 프롬프트\"}]}}";
+
+    // when
+    ParseLinesResult result = parser.parseLines(List.of(userLine), null);
+
+    // then
+    assertThat(result.entries()).isEmpty();
+    assertThat(result.pendingUserPrompt()).isEqualTo("이월될 프롬프트");
+  }
 }

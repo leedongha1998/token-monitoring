@@ -34,6 +34,15 @@ public class ProjectService {
         .orElseThrow(() -> new BusinessException(ErrorCode.PROJECT_NOT_FOUND));
   }
 
+  @Transactional
+  public Long findOrCreateByDirectoryName(String dirName) {
+    String name = dirName.length() > 100 ? dirName.substring(0, 100) : dirName;
+    return projectRepository
+        .findByName(name)
+        .orElseGet(() -> projectRepository.save(Project.create(name, "Claude Code 자동 감지")))
+        .getId();
+  }
+
   public PageResult<ProjectResult> findAll(int page, int size) {
     var springPage =
         projectRepository.findAll(

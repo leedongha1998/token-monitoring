@@ -52,10 +52,11 @@ public class UsageEventController {
       @RequestParam(required = false) Long projectId,
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+      @RequestParam(required = false) String model,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "50") int size) {
     PageResult<UsageEventResult> raw =
-        usageEventService.findEvents(projectId, from, to, page, size);
+        usageEventService.findEvents(projectId, from, to, model, page, size);
     List<UsageEventListResponse> content =
         raw.content().stream().map(UsageEventListResponse::from).toList();
     return new PageResult<>(content, raw.totalElements(), raw.totalPages(), raw.number());

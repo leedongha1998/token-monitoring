@@ -18,8 +18,11 @@ export async function fetchDailyStats(params: {
 export async function fetchSummaryStats(params: {
   from: string;
   to: string;
+  projectId?: number;
 }): Promise<SummaryStats> {
   const query = new URLSearchParams({ from: params.from, to: params.to });
+  if (params.projectId !== undefined)
+    query.set("projectId", String(params.projectId));
   const res = await fetch(`/v1/stats/summary?${query}`);
   if (!res.ok) throw new Error(`요약 통계 조회 실패: ${res.status}`);
   return res.json() as Promise<SummaryStats>;

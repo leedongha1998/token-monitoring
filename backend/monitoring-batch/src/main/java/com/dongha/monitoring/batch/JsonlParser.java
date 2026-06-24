@@ -24,17 +24,23 @@ public class JsonlParser {
       Pattern.compile("\"cache_read_input_tokens\"\\s*:\\s*(\\d+)");
 
   public List<UsageEventRequest> parse(Path file) throws IOException {
+    String sessionId = extractSessionId(file);
     try (var lines = Files.lines(file)) {
       return lines
           .filter(line -> line.contains("\"input_tokens\""))
-          .map(JsonlParser::parseLine)
+          .map(line -> parseLine(line, sessionId))
           .filter(Optional::isPresent)
           .map(Optional::get)
           .toList();
     }
   }
 
-  private static Optional<UsageEventRequest> parseLine(String line) {
+  private static String extractSessionId(Path file) {
+    String filename = file.getFileName().toString();
+    return filename.endsWith(".jsonl") ? filename.substring(0, filename.length() - 6) : filename;
+  }
+
+  private static Optional<UsageEventRequest> parseLine(String line, String sessionId) {
     Matcher inputMatcher = INPUT_TOKENS.matcher(line);
     Matcher outputMatcher = OUTPUT_TOKENS.matcher(line);
     Matcher modelMatcher = MODEL.matcher(line);
@@ -59,6 +65,7 @@ public class JsonlParser {
         uuidMatcher.find() ? uuidMatcher.group(1) : UUID.randomUUID().toString();
 
     return Optional.of(
-        new UsageEventRequest(idempotencyKey, model, inputTokens, outputTokens, occurredAt, null));
+        new UsageEventRequest(
+            idempotencyKey, model, inputTokens, outputTokens, occurredAt, null, sessionId));
   }
 }

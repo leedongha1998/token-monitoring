@@ -34,6 +34,7 @@ class JsonlParserTest {
     assertThat(results.get(0).model()).isEqualTo("claude-sonnet-4-5");
     assertThat(results.get(0).inputTokens()).isEqualTo(1024);
     assertThat(results.get(0).outputTokens()).isEqualTo(512);
+    assertThat(results.get(0).sessionId()).isEqualTo("test");
   }
 
   @Test

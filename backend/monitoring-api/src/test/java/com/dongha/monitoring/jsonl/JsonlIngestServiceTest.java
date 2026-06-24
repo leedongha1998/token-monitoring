@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dongha.monitoring.project.service.ProjectService;
 import com.dongha.monitoring.usage.service.IngestStatus;
 import com.dongha.monitoring.usage.service.UsageEventRequest;
 import com.dongha.monitoring.usage.service.UsageEventService;
@@ -28,6 +29,7 @@ class JsonlIngestServiceTest {
   @Mock UsageEventService usageEventService;
   @Mock ClaudeJsonlParser parser;
   @Mock JsonlStateStore stateStore;
+  @Mock ProjectService projectService;
 
   @TempDir Path tempDir;
 
@@ -36,7 +38,7 @@ class JsonlIngestServiceTest {
     // given
     JsonlIngestService service =
         new JsonlIngestService(
-            usageEventService, parser, stateStore, tempDir.toString(), "1", false);
+            usageEventService, parser, stateStore, projectService, tempDir.toString(), "1", false);
 
     // when
     service.scan();
@@ -47,16 +49,32 @@ class JsonlIngestServiceTest {
   }
 
   @Test
-  void projectId_미설정이면_스캔하지_않는다() {
+  void projectId_미설정이면_디렉토리명으로_프로젝트를_자동_감지한다() throws Exception {
     // given
+    Path projectDir = tempDir.resolve("C--Workspace-my-app");
+    Files.createDirectories(projectDir);
+    Path file = projectDir.resolve("session.jsonl");
+    Files.writeString(file, "{\"type\":\"assistant\"}\n");
+
+    JsonlEntry entry =
+        new JsonlEntry("auto-uuid", "claude-sonnet-4-6", 100, 50, Instant.now(), null);
+    when(stateStore.getOffset(file)).thenReturn(0L);
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
+    when(projectService.findOrCreateByDirectoryName("C--Workspace-my-app")).thenReturn(2L);
+    when(usageEventService.ingest(eq(2L), any(UsageEventRequest.class)))
+        .thenReturn(IngestStatus.ACCEPTED);
+
     JsonlIngestService service =
-        new JsonlIngestService(usageEventService, parser, stateStore, tempDir.toString(), "", true);
+        new JsonlIngestService(
+            usageEventService, parser, stateStore, projectService, tempDir.toString(), "", true);
 
     // when
     service.scan();
 
     // then
-    verify(usageEventService, never()).ingest(any(), any());
+    verify(projectService).findOrCreateByDirectoryName("C--Workspace-my-app");
+    verify(usageEventService).ingest(eq(2L), any(UsageEventRequest.class));
   }
 
   @Test
@@ -70,13 +88,14 @@ class JsonlIngestServiceTest {
     JsonlEntry entry =
         new JsonlEntry("test-uuid", "claude-sonnet-4-6", 100, 50, Instant.now(), null);
     when(stateStore.getOffset(file)).thenReturn(0L);
-    when(parser.parseLines(anyList())).thenReturn(List.of(entry));
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
     when(usageEventService.ingest(eq(1L), any(UsageEventRequest.class)))
         .thenReturn(IngestStatus.ACCEPTED);
 
     JsonlIngestService service =
         new JsonlIngestService(
-            usageEventService, parser, stateStore, tempDir.toString(), "1", true);
+            usageEventService, parser, stateStore, projectService, tempDir.toString(), "1", true);
 
     // when
     service.scan();
@@ -101,7 +120,7 @@ class JsonlIngestServiceTest {
 
     JsonlIngestService service =
         new JsonlIngestService(
-            usageEventService, parser, stateStore, tempDir.toString(), "1", true);
+            usageEventService, parser, stateStore, projectService, tempDir.toString(), "1", true);
 
     // when
     service.scan();
@@ -121,12 +140,13 @@ class JsonlIngestServiceTest {
 
     JsonlEntry entry = new JsonlEntry("good-uuid", "claude-haiku-4-5", 10, 5, Instant.now(), null);
     when(stateStore.getOffset(file)).thenReturn(0L);
-    when(parser.parseLines(anyList())).thenReturn(List.of(entry));
+    when(parser.parseLines(anyList(), any()))
+        .thenReturn(new ParseLinesResult(List.of(entry), null));
     when(usageEventService.ingest(eq(1L), any())).thenReturn(IngestStatus.ACCEPTED);
 
     JsonlIngestService service =
         new JsonlIngestService(
-            usageEventService, parser, stateStore, tempDir.toString(), "1", true);
+            usageEventService, parser, stateStore, projectService, tempDir.toString(), "1", true);
 
     // when
     service.scan();

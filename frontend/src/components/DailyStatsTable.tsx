@@ -25,37 +25,39 @@ export function DailyStatsTable({ from, to, projectId, model }: Props) {
       .finally(() => setLoading(false));
   }, [from, to, projectId, model]);
 
-  if (loading) return <p>일별 통계 로딩 중...</p>;
-  if (error) return <p style={{ color: "red" }}>오류: {error}</p>;
+  if (loading) return <p className="text-gray-500 text-sm">일별 통계 로딩 중...</p>;
+  if (error) return <p className="text-red-500 text-sm">오류: {error}</p>;
 
   return (
-    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+    <table className="w-full border-collapse text-sm">
       <thead>
-        <tr style={{ background: "#f5f5f5", textAlign: "left" }}>
-          <th style={thStyle}>날짜</th>
-          <th style={thStyle}>프로젝트 ID</th>
-          <th style={thStyle}>모델</th>
-          <th style={thStyle}>입력 토큰</th>
-          <th style={thStyle}>출력 토큰</th>
-          <th style={thStyle}>비용 (USD)</th>
+        <tr className="bg-gray-50 text-left">
+          {["날짜", "프로젝트 ID", "모델", "입력 토큰", "출력 토큰", "비용 (USD)"].map((h) => (
+            <th key={h} className="px-3 py-2.5 font-semibold border-b border-gray-200">
+              {h}
+            </th>
+          ))}
         </tr>
       </thead>
       <tbody>
         {rows.length === 0 ? (
           <tr>
-            <td colSpan={6} style={{ padding: 16, textAlign: "center", color: "#999" }}>
+            <td colSpan={6} className="px-3 py-4 text-center text-gray-400">
               데이터 없음
             </td>
           </tr>
         ) : (
           rows.map((row) => (
-            <tr key={`${row.date}-${row.projectId}-${row.model}`} style={{ borderBottom: "1px solid #eee" }}>
-              <td style={tdStyle}>{row.date}</td>
-              <td style={tdStyle}>{row.projectId}</td>
-              <td style={tdStyle}>{row.model}</td>
-              <td style={tdStyle}>{row.totalInputTokens.toLocaleString()}</td>
-              <td style={tdStyle}>{row.totalOutputTokens.toLocaleString()}</td>
-              <td style={tdStyle}>${row.totalCost}</td>
+            <tr
+              key={`${row.date}-${row.projectId}-${row.model}`}
+              className="border-b border-gray-100 hover:bg-gray-50"
+            >
+              <td className="px-3 py-2.5">{row.date}</td>
+              <td className="px-3 py-2.5">{row.projectId}</td>
+              <td className="px-3 py-2.5">{row.model}</td>
+              <td className="px-3 py-2.5">{row.totalInputTokens.toLocaleString()}</td>
+              <td className="px-3 py-2.5">{row.totalOutputTokens.toLocaleString()}</td>
+              <td className="px-3 py-2.5">${row.totalCost}</td>
             </tr>
           ))
         )}
@@ -63,6 +65,3 @@ export function DailyStatsTable({ from, to, projectId, model }: Props) {
     </table>
   );
 }
-
-const thStyle: React.CSSProperties = { padding: "10px 12px", fontWeight: 600 };
-const tdStyle: React.CSSProperties = { padding: "10px 12px" };
