@@ -138,10 +138,10 @@ class UsageEventControllerTest {
     // given
     Instant occurredAt = Instant.parse("2026-06-13T00:00:00Z");
     UsageEventResult item =
-        new UsageEventResult(1L, "claude-sonnet-4-5", 100, 50, occurredAt, null);
+        new UsageEventResult(1L, "claude-sonnet-4-5", 100, 50, occurredAt, null, null);
     PageResult<UsageEventResult> pageResult = new PageResult<>(List.of(item), 1L, 1, 0);
     when(usageEventService.findEvents(
-            isNull(), any(Instant.class), any(Instant.class), anyInt(), anyInt()))
+            isNull(), any(Instant.class), any(Instant.class), isNull(), anyInt(), anyInt()))
         .thenReturn(pageResult);
 
     // when & then

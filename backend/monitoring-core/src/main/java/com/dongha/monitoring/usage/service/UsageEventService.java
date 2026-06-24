@@ -2,12 +2,19 @@ package com.dongha.monitoring.usage.service;
 
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
+import com.dongha.monitoring.pricing.service.ModelPricingResult;
+import com.dongha.monitoring.pricing.service.ModelPricingService;
 import com.dongha.monitoring.project.service.PageResult;
 import com.dongha.monitoring.usage.domain.UsageEvent;
 import com.dongha.monitoring.usage.repository.UsageEventRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,9 +28,12 @@ public class UsageEventService {
   private static final int MAX_BATCH_SIZE = 100;
 
   private final UsageEventRepository usageEventRepository;
+  private final ModelPricingService modelPricingService;
 
-  public UsageEventService(UsageEventRepository usageEventRepository) {
+  public UsageEventService(
+      UsageEventRepository usageEventRepository, ModelPricingService modelPricingService) {
     this.usageEventRepository = usageEventRepository;
+    this.modelPricingService = modelPricingService;
   }
 
   @Transactional
@@ -43,7 +53,8 @@ public class UsageEventService {
             request.inputTokens(),
             request.outputTokens(),
             request.occurredAt(),
-            newPayload));
+            newPayload,
+            request.sessionId()));
     return IngestStatus.ACCEPTED;
   }
 
@@ -70,7 +81,8 @@ public class UsageEventService {
                 req.inputTokens(),
                 req.outputTokens(),
                 req.occurredAt(),
-                buildRawPayload(req.promptSummary())));
+                buildRawPayload(req.promptSummary()),
+                req.sessionId()));
         status = IngestStatus.ACCEPTED;
         accepted++;
       }
@@ -80,17 +92,72 @@ public class UsageEventService {
   }
 
   public PageResult<UsageEventResult> findEvents(
-      Long projectId, Instant from, Instant to, int page, int size) {
+      Long projectId, Instant from, Instant to, String model, int page, int size) {
     PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "occurredAt"));
-    Page<UsageEvent> result =
-        projectId != null
-            ? usageEventRepository.findByProjectAndDateRange(projectId, from, to, pageable)
-            : usageEventRepository.findByDateRange(from, to, pageable);
+    Page<UsageEvent> result;
+    if (projectId != null && model != null) {
+      result =
+          usageEventRepository.findByProjectAndDateRangeAndModel(
+              projectId, from, to, model, pageable);
+    } else if (projectId != null) {
+      result = usageEventRepository.findByProjectAndDateRange(projectId, from, to, pageable);
+    } else if (model != null) {
+      result = usageEventRepository.findByDateRangeAndModel(from, to, model, pageable);
+    } else {
+      result = usageEventRepository.findByDateRange(from, to, pageable);
+    }
+
+    Map<String, Optional<ModelPricingResult>> pricingByModel =
+        result.getContent().stream()
+            .map(UsageEvent::getModel)
+            .distinct()
+            .collect(
+                Collectors.toMap(
+                    m -> m,
+                    m -> modelPricingService.findEffectivePricing(m, Instant.now()),
+                    (a, b) -> a));
+
     return new PageResult<>(
-        result.getContent().stream().map(UsageEventResult::from).toList(),
+        result.getContent().stream()
+            .map(e -> UsageEventResult.from(e, pricingByModel.get(e.getModel())))
+            .toList(),
         result.getTotalElements(),
         result.getTotalPages(),
         result.getNumber());
+  }
+
+  public List<SessionEfficiencyResponse> getSessionEfficiency(
+      Long projectId, Instant from, Instant to) {
+    return usageEventRepository.findSessionEfficiency(projectId, from, to).stream()
+        .map(
+            r -> {
+              BigDecimal costUsd =
+                  modelPricingService
+                      .findEffectivePricing(r.model(), r.sessionDate())
+                      .map(
+                          pricing ->
+                              pricing
+                                  .inputPricePerMToken()
+                                  .multiply(BigDecimal.valueOf(r.totalInputTokens()))
+                                  .divide(BigDecimal.valueOf(1_000_000), 8, RoundingMode.HALF_UP)
+                                  .add(
+                                      pricing
+                                          .outputPricePerMToken()
+                                          .multiply(BigDecimal.valueOf(r.totalOutputTokens()))
+                                          .divide(
+                                              BigDecimal.valueOf(1_000_000),
+                                              8,
+                                              RoundingMode.HALF_UP)))
+                      .orElse(BigDecimal.ZERO);
+              return new SessionEfficiencyResponse(
+                  r.sessionId(),
+                  r.sessionDate(),
+                  r.model(),
+                  r.totalInputTokens(),
+                  r.totalOutputTokens(),
+                  costUsd);
+            })
+        .toList();
   }
 
   @Transactional

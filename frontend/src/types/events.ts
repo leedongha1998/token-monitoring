@@ -5,6 +5,7 @@ export interface EventItem {
   outputTokens: number;
   occurredAt: string;
   promptSummary: string | null;
+  cost?: string | null;
 }
 
 export interface EventPage {

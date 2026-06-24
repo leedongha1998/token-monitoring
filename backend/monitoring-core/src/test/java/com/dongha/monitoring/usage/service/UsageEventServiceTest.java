@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.dongha.monitoring.common.exception.BusinessException;
 import com.dongha.monitoring.common.exception.ErrorCode;
+import com.dongha.monitoring.pricing.service.ModelPricingService;
 import com.dongha.monitoring.project.service.PageResult;
 import com.dongha.monitoring.usage.domain.UsageEvent;
 import com.dongha.monitoring.usage.repository.UsageEventRepository;
@@ -32,11 +33,12 @@ import org.springframework.data.domain.Pageable;
 class UsageEventServiceTest {
 
   @Mock private UsageEventRepository usageEventRepository;
+  @Mock private ModelPricingService modelPricingService;
   @InjectMocks private UsageEventService usageEventService;
 
   private static final Long PROJECT_ID = 1L;
   private static final UsageEventRequest SAMPLE_REQUEST =
-      new UsageEventRequest("idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null);
+      new UsageEventRequest("idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null, null);
 
   @Test
   void 신규_idempotencyKey로_요청하면_저장하고_ACCEPTED를_반환한다() {
@@ -57,7 +59,7 @@ class UsageEventServiceTest {
     // given
     UsageEvent existing =
         UsageEvent.create(
-            PROJECT_ID, "idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null);
+            PROJECT_ID, "idem-key-1", "claude-sonnet-4-5", 100, 50, Instant.now(), null, null);
     when(usageEventRepository.findByIdempotencyKey("idem-key-1")).thenReturn(Optional.of(existing));
 
     // when
@@ -72,9 +74,9 @@ class UsageEventServiceTest {
   void 배치에서_일부_중복_키가_있으면_부분_성공으로_처리한다() {
     // given
     UsageEventRequest req1 =
-        new UsageEventRequest("key-1", "claude-sonnet-4-5", 10, 5, Instant.now(), null);
+        new UsageEventRequest("key-1", "claude-sonnet-4-5", 10, 5, Instant.now(), null, null);
     UsageEventRequest req2 =
-        new UsageEventRequest("key-2", "claude-sonnet-4-5", 20, 10, Instant.now(), null);
+        new UsageEventRequest("key-2", "claude-sonnet-4-5", 20, 10, Instant.now(), null, null);
     when(usageEventRepository.existsByIdempotencyKey("key-1")).thenReturn(false);
     when(usageEventRepository.existsByIdempotencyKey("key-2")).thenReturn(true);
     when(usageEventRepository.save(any(UsageEvent.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -98,7 +100,7 @@ class UsageEventServiceTest {
             .mapToObj(
                 i ->
                     new UsageEventRequest(
-                        "key-" + i, "claude-sonnet-4-5", 1, 1, Instant.now(), null))
+                        "key-" + i, "claude-sonnet-4-5", 1, 1, Instant.now(), null, null))
             .toList();
 
     // when & then
@@ -124,7 +126,8 @@ class UsageEventServiceTest {
   void backfillMissingPromptSummaries_nullPromptSummaryを持つイベントが埋められる() {
     // given — rawPayload exists but contains no promptSummary key → getPromptSummary() returns null
     UsageEvent eventWithoutSummary =
-        UsageEvent.create(PROJECT_ID, "key-bf-1", "claude-sonnet-4-5", 10, 5, Instant.now(), "{}");
+        UsageEvent.create(
+            PROJECT_ID, "key-bf-1", "claude-sonnet-4-5", 10, 5, Instant.now(), "{}", null);
     // rawPayload has valid promptSummary → getPromptSummary() returns non-null → skip
     UsageEvent eventWithSummary =
         UsageEvent.create(
@@ -134,7 +137,8 @@ class UsageEventServiceTest {
             10,
             5,
             Instant.now(),
-            "{\"promptSummary\":\"hello\"}");
+            "{\"promptSummary\":\"hello\"}",
+            null);
     when(usageEventRepository.findByRawPayloadIsNotNull())
         .thenReturn(List.of(eventWithoutSummary, eventWithSummary));
 
@@ -152,14 +156,15 @@ class UsageEventServiceTest {
     Instant from = Instant.parse("2026-06-01T00:00:00Z");
     Instant to = Instant.parse("2026-06-02T00:00:00Z");
     UsageEvent event =
-        UsageEvent.create(PROJECT_ID, "idem-1", "claude-sonnet-4-5", 100, 50, from, null);
+        UsageEvent.create(PROJECT_ID, "idem-1", "claude-sonnet-4-5", 100, 50, from, null, null);
     Page<UsageEvent> page = new PageImpl<>(List.of(event));
     when(usageEventRepository.findByProjectAndDateRange(
             eq(PROJECT_ID), eq(from), eq(to), any(Pageable.class)))
         .thenReturn(page);
 
     // when
-    PageResult<UsageEventResult> result = usageEventService.findEvents(PROJECT_ID, from, to, 0, 50);
+    PageResult<UsageEventResult> result =
+        usageEventService.findEvents(PROJECT_ID, from, to, null, 0, 50);
 
     // then
     assertThat(result.content()).hasSize(1);

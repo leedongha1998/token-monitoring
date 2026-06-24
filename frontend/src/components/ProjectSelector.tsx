@@ -4,7 +4,7 @@ import type { Project } from "../types/project";
 
 interface Props {
   selectedProjectId?: number;
-  onProjectChange: (projectId: number | undefined) => void;
+  onProjectChange: (projectId: number | undefined, projectName?: string) => void;
 }
 
 export function ProjectSelector({ selectedProjectId, onProjectChange }: Props) {
@@ -17,7 +17,7 @@ export function ProjectSelector({ selectedProjectId, onProjectChange }: Props) {
       .then((data) => {
         setProjects(data);
         if (data.length > 0) {
-          onProjectChange(data[0].id);
+          onProjectChange(data[0].id, data[0].name);
         }
       })
       .catch((e: unknown) => setError(String(e)))
@@ -27,11 +27,11 @@ export function ProjectSelector({ selectedProjectId, onProjectChange }: Props) {
 
   if (loading) {
     return (
-      <label style={{ fontSize: 14 }}>
+      <label className="text-sm">
         프로젝트
         <select
           disabled
-          style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14 }}
+          className="ml-2 px-2 py-1 text-sm border border-gray-300 rounded"
         >
           <option>로딩 중…</option>
         </select>
@@ -40,21 +40,25 @@ export function ProjectSelector({ selectedProjectId, onProjectChange }: Props) {
   }
 
   if (error) {
-    return (
-      <span style={{ fontSize: 14, color: "red" }}>프로젝트 오류: {error}</span>
-    );
+    return <span className="text-sm text-red-500">프로젝트 오류: {error}</span>;
   }
 
   return (
-    <label style={{ fontSize: 14 }}>
+    <label className="text-sm">
       프로젝트
       <select
         value={selectedProjectId ?? ""}
         onChange={(e) => {
           const val = e.target.value;
-          onProjectChange(val === "" ? undefined : Number(val));
+          if (val === "") {
+            onProjectChange(undefined, undefined);
+          } else {
+            const id = Number(val);
+            const project = projects.find((p) => p.id === id);
+            onProjectChange(id, project?.name);
+          }
         }}
-        style={{ marginLeft: 8, padding: "4px 8px", fontSize: 14 }}
+        className="ml-2 px-2 py-1 text-sm border border-gray-300 rounded"
       >
         <option value="">전체</option>
         {projects.map((p) => (

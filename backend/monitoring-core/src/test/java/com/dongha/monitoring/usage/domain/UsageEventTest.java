@@ -12,7 +12,7 @@ class UsageEventTest {
     // given — buildRawPayload가 생성하는 형식
     UsageEvent event =
         UsageEvent.create(
-            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\":\"hello\"}");
+            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\":\"hello\"}", null);
 
     // when / then
     assertThat(event.getPromptSummary()).isEqualTo("hello");
@@ -23,7 +23,7 @@ class UsageEventTest {
     // given — PostgreSQL JSONB가 콜론 뒤에 공백을 추가한 형식
     UsageEvent event =
         UsageEvent.create(
-            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\": \"hello\"}");
+            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\": \"hello\"}", null);
 
     // when / then
     assertThat(event.getPromptSummary()).isEqualTo("hello");
@@ -34,7 +34,14 @@ class UsageEventTest {
     // given
     UsageEvent event =
         UsageEvent.create(
-            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\": \"line1\\nline2\"}");
+            1L,
+            "key",
+            "model",
+            10,
+            5,
+            Instant.now(),
+            "{\"promptSummary\": \"line1\\nline2\"}",
+            null);
 
     // when / then
     assertThat(event.getPromptSummary()).isEqualTo("line1\nline2");
@@ -43,7 +50,7 @@ class UsageEventTest {
   @Test
   void getPromptSummary_rawPayload가_null이면_null을_반환한다() {
     // given
-    UsageEvent event = UsageEvent.create(1L, "key", "model", 10, 5, Instant.now(), null);
+    UsageEvent event = UsageEvent.create(1L, "key", "model", 10, 5, Instant.now(), null, null);
 
     // when / then
     assertThat(event.getPromptSummary()).isNull();
@@ -54,7 +61,7 @@ class UsageEventTest {
     // given
     UsageEvent event =
         UsageEvent.create(
-            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\": \"original\"}");
+            1L, "key", "model", 10, 5, Instant.now(), "{\"promptSummary\": \"original\"}", null);
 
     // when
     event.fillRawPayload("{\"promptSummary\": \"new\"}");
@@ -66,7 +73,7 @@ class UsageEventTest {
   @Test
   void fillRawPayload_null인_경우에만_채운다() {
     // given
-    UsageEvent event = UsageEvent.create(1L, "key", "model", 10, 5, Instant.now(), null);
+    UsageEvent event = UsageEvent.create(1L, "key", "model", 10, 5, Instant.now(), null, null);
 
     // when
     event.fillRawPayload("{\"promptSummary\": \"filled\"}");

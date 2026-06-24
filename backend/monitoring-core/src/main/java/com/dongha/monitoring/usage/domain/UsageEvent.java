@@ -40,6 +40,9 @@ public class UsageEvent {
   @Column(name = "raw_payload", columnDefinition = "jsonb")
   private String rawPayload;
 
+  @Column(name = "session_id", length = 255)
+  private String sessionId;
+
   protected UsageEvent() {}
 
   public static UsageEvent create(
@@ -49,7 +52,8 @@ public class UsageEvent {
       int inputTokens,
       int outputTokens,
       Instant occurredAt,
-      String rawPayload) {
+      String rawPayload,
+      String sessionId) {
     UsageEvent event = new UsageEvent();
     event.projectId = projectId;
     event.idempotencyKey = idempotencyKey;
@@ -58,6 +62,7 @@ public class UsageEvent {
     event.outputTokens = outputTokens;
     event.occurredAt = occurredAt;
     event.rawPayload = rawPayload;
+    event.sessionId = sessionId;
     return event;
   }
 
@@ -91,6 +96,10 @@ public class UsageEvent {
 
   public String getRawPayload() {
     return rawPayload;
+  }
+
+  public String getSessionId() {
+    return sessionId;
   }
 
   public void fillRawPayload(String newRawPayload) {

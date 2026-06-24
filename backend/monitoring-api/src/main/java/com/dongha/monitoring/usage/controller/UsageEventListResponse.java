@@ -1,6 +1,7 @@
 package com.dongha.monitoring.usage.controller;
 
 import com.dongha.monitoring.usage.service.UsageEventResult;
+import java.math.BigDecimal;
 import java.time.Instant;
 
 public record UsageEventListResponse(
@@ -9,7 +10,8 @@ public record UsageEventListResponse(
     int inputTokens,
     int outputTokens,
     Instant occurredAt,
-    String promptSummary) {
+    String promptSummary,
+    BigDecimal cost) {
 
   public static UsageEventListResponse from(UsageEventResult result) {
     return new UsageEventListResponse(
@@ -18,6 +20,7 @@ public record UsageEventListResponse(
         result.inputTokens(),
         result.outputTokens(),
         result.occurredAt(),
-        result.promptSummary());
+        result.promptSummary(),
+        result.cost());
   }
 }

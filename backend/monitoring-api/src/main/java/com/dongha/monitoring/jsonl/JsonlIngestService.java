@@ -79,6 +79,7 @@ public class JsonlIngestService {
     if (offset >= fileSize) return;
 
     Long projectId = resolveProjectId(file);
+    String sessionId = extractSessionId(file);
     String pendingPrompt = stateStore.getPendingUserPrompt(file);
     List<String> lines = readLinesFrom(file, offset);
     ParseLinesResult parsed = parser.parseLines(lines, pendingPrompt);
@@ -94,7 +95,8 @@ public class JsonlIngestService {
                 entry.inputTokens(),
                 entry.outputTokens(),
                 entry.occurredAt(),
-                entry.promptSummary()));
+                entry.promptSummary(),
+                sessionId));
         accepted++;
       } catch (Exception e) {
         log.warn("이벤트 수집 실패: key={}, error={}", entry.idempotencyKey(), e.getMessage());
@@ -105,6 +107,11 @@ public class JsonlIngestService {
     if (accepted > 0) {
       log.info("JSONL 수집 완료: file={}, accepted={}", file.getFileName(), accepted);
     }
+  }
+
+  private static String extractSessionId(Path file) {
+    String filename = file.getFileName().toString();
+    return filename.endsWith(".jsonl") ? filename.substring(0, filename.length() - 6) : filename;
   }
 
   private Long resolveProjectId(Path file) {
